@@ -259,13 +259,25 @@
     <!-- Quote request -->
     <div class="section">
       <h2><span class="step-num">5</span>Send your design</h2>
-      <form id="quoteForm">
+      <form id="quoteForm" action="https://formsubmit.co/sales@marathononline.com"
+            method="POST" enctype="multipart/form-data">
         <label for="qName">Name *</label>
-        <input id="qName" type="text" required autocomplete="name">
+        <input id="qName" name="name" type="text" required autocomplete="name">
         <label for="qEmail">Email *</label>
-        <input id="qEmail" type="email" required autocomplete="email">
+        <input id="qEmail" name="email" type="email" required autocomplete="email">
         <label for="qPhone">Phone</label>
-        <input id="qPhone" type="tel" autocomplete="tel">
+        <input id="qPhone" name="phone" type="tel" autocomplete="tel">
+        <input type="hidden" name="_subject" id="fSubject" value="Apparel design request">
+        <input type="hidden" name="_template" value="table">
+        <input type="hidden" name="_captcha" value="false">
+        <input type="hidden" name="_next" id="fNext">
+        <input type="hidden" name="garment" id="fGarment">
+        <input type="hidden" name="color" id="fColor">
+        <input type="hidden" name="product_photo_front" id="fPhotoF">
+        <input type="hidden" name="product_photo_back" id="fPhotoB">
+        <input type="hidden" name="design_front" id="fDesignF">
+        <input type="hidden" name="design_back" id="fDesignB">
+        <div id="fileSlots" hidden></div>
         <button type="submit" class="send-btn" id="sendBtn">Send to Marathon Printing</button>
         <div id="quoteStatus"></div>
       </form>
@@ -994,8 +1006,13 @@ function designSummary(side) {
   ).join(" | ");
 }
 
+/* Native form submission is required for FormSubmit to forward
+   attachments (their AJAX endpoint drops files). We prepare the
+   design files, inject them into hidden file inputs, then submit
+   the form for real. FormSubmit redirects back here with ?sent=1. */
 document.getElementById("quoteForm").addEventListener("submit", async e => {
   e.preventDefault();
+  const form = e.target;
   const btn = document.getElementById("sendBtn");
   const status = document.getElementById("quoteStatus");
   const g = G();
@@ -1007,60 +1024,67 @@ document.getElementById("quoteForm").addEventListener("submit", async e => {
   status.textContent = "Preparing design files…";
 
   try {
-    const fd = new FormData();
-    fd.append("name", document.getElementById("qName").value.trim());
-    fd.append("email", document.getElementById("qEmail").value.trim());
-    fd.append("phone", document.getElementById("qPhone").value.trim() || "not provided");
-    fd.append("_subject", "Apparel design request from " + document.getElementById("qName").value.trim());
-    fd.append("_template", "table");
-    fd.append("_captcha", "false");
-    fd.append("garment", `${CATEGORIES[activeCategory].name} — ${g.name} (${g.desc})`);
-    fd.append("color", color.name);
-    if (g.type === "photo") {
-      fd.append("product_photo_front", ssImg(color.id, "front", "fl"));
-      fd.append("product_photo_back", ssImg(color.id, "back", "fl"));
-    }
-    fd.append("design_front", designSummary("front"));
-    fd.append("design_back", designSummary("back"));
+    document.getElementById("fSubject").value =
+      "Apparel design request from " + document.getElementById("qName").value.trim();
+    document.getElementById("fNext").value =
+      location.href.split("?")[0] + "?sent=1";
+    document.getElementById("fGarment").value =
+      `${CATEGORIES[activeCategory].name} — ${g.name} (${g.desc})`;
+    document.getElementById("fColor").value = color.name;
+    document.getElementById("fPhotoF").value =
+      g.type === "photo" ? ssImg(color.id, "front", "fl") : "placeholder garment";
+    document.getElementById("fPhotoB").value =
+      g.type === "photo" ? ssImg(color.id, "back", "fl") : "placeholder garment";
+    document.getElementById("fDesignF").value = designSummary("front");
+    document.getElementById("fDesignB").value = designSummary("back");
 
-    /* Attach design snapshots for any side that has items */
+    /* Inject files into hidden file inputs */
+    const slots = document.getElementById("fileSlots");
+    slots.innerHTML = "";
     let n = 1;
+    const addFile = file => {
+      const inp = document.createElement("input");
+      inp.type = "file";
+      inp.name = "attachment" + n++;
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      inp.files = dt.files;
+      slots.appendChild(inp);
+    };
+
+    /* Design snapshots for any side that has items */
     for (const side of ["front", "back"]) {
       if (!items[side].length) continue;
       const snap = await snapshot(side);
-      fd.append("attachment" + n++,
-        new File([snap.blob], `design-${side}.${snap.ext}`, { type: snap.blob.type }));
+      addFile(new File([snap.blob], `design-${side}.${snap.ext}`, { type: snap.blob.type }));
     }
-    /* Attach the customer's original artwork files (deduplicated) */
+    /* Customer's original artwork files (deduplicated) */
     const seen = new Set();
     for (const side of ["front", "back"]) {
       for (const it of items[side]) {
         if (it.type === "image" && it.file && !seen.has(it.file)) {
           seen.add(it.file);
-          fd.append("attachment" + n++, it.file, it.file.name);
+          addFile(it.file);
         }
       }
     }
 
     status.textContent = "Sending…";
-    const resp = await fetch("https://formsubmit.co/ajax/" + SALES_EMAIL, {
-      method: "POST",
-      body: fd,
-      headers: { "Accept": "application/json" }
-    });
-    const json = await resp.json();
-    if (!resp.ok || !(json.success === true || json.success === "true")) throw new Error("send");
-
-    status.className = "ok";
-    status.textContent = "Sent! We'll be in touch soon.";
-    e.target.reset();
+    form.submit();
   } catch (err) {
     status.className = "err";
-    status.textContent = "Couldn't send automatically — please email " + SALES_EMAIL + " directly.";
-  } finally {
+    status.textContent = "Couldn't send — please email " + SALES_EMAIL + " directly.";
     btn.disabled = false;
   }
 });
+
+/* Show confirmation after FormSubmit redirects back */
+if (new URLSearchParams(location.search).get("sent") === "1") {
+  const status = document.getElementById("quoteStatus");
+  status.className = "ok";
+  status.textContent = "Sent! We'll be in touch soon.";
+  history.replaceState(null, "", location.pathname);
+}
 
 buildStylePicker();
 buildColorPicker();
