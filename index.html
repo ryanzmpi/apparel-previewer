@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apparel Design Previewer</title>
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --card: #ffffff;
+    --ink: #1e2430;
+    --muted: #6b7280;
+    --accent: #2f6fed;
+    --danger: #d64545;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+  header { padding: 28px 32px 12px; text-align: center; }
+  header h1 { font-size: 1.7rem; letter-spacing: -0.02em; }
+  header p { color: var(--muted); margin-top: 6px; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 24px;
+    max-width: 1100px;
+    margin: 24px auto;
+    padding: 0 24px 48px;
+  }
+  @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    align-self: start;
+  }
+  .panel h2 {
+    font-size: .8rem; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--muted); margin-bottom: 12px;
+  }
+  .step-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-size: .7rem; margin-right: 6px;
+  }
+  .section + .section { margin-top: 24px; }
+
+  /* Step 1: garment picker */
+  .garments { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .garment-btn {
+    border: 2px solid #e5e7eb; border-radius: 10px; background: #fafafa;
+    cursor: pointer; padding: 8px 4px 6px;
+    transition: border-color .15s, transform .1s;
+  }
+  .garment-btn:hover { transform: translateY(-2px); }
+  .garment-btn.active { border-color: var(--accent); background: #eef4ff; }
+  .garment-btn svg { width: 100%; height: auto; display: block; }
+  .garment-btn span {
+    display: block; font-size: .72rem; color: var(--muted);
+    text-align: center; margin-top: 4px;
+  }
+
+  /* Step 2: color swatches */
+  .swatches { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+  .swatch {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 2px solid rgba(0,0,0,.12); cursor: pointer; transition: transform .1s;
+  }
+  .swatch:hover { transform: scale(1.1); }
+  .swatch.active { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  /* Step 3: add artwork / text */
+  .add-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .upload-btn, .text-btn {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; min-height: 78px;
+    border: 2px dashed #c4cad4; border-radius: 10px; background: #fafafa;
+    cursor: pointer; color: var(--muted); font-size: .72rem; text-align: center;
+    transition: border-color .15s, color .15s;
+  }
+  .upload-btn:hover, .text-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .big-icon { font-size: 1.4rem; line-height: 1; }
+  #fileInput { display: none; }
+  .upload-hint { font-size: .7rem; color: var(--muted); margin-top: 8px; }
+
+  /* Selected item editor */
+  #itemEditor { display: none; }
+  #itemEditor.visible { display: block; }
+  #itemEditor label {
+    display: block; font-size: .72rem; color: var(--muted); margin: 10px 0 4px;
+  }
+  #textValue {
+    width: 100%; padding: 8px 10px; font-size: .9rem;
+    border: 1.5px solid #d6dae2; border-radius: 8px;
+  }
+  #sizeSlider { width: 100%; accent-color: var(--accent); }
+  .text-colors { display: flex; gap: 8px; }
+  .text-color {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 2px solid rgba(0,0,0,.15); cursor: pointer;
+  }
+  .text-color.active { outline: 2.5px solid var(--accent); outline-offset: 2px; }
+  .delete-btn {
+    margin-top: 14px; width: 100%; padding: 8px;
+    background: none; border: 1.5px solid var(--danger); color: var(--danger);
+    border-radius: 8px; cursor: pointer; font-size: .8rem;
+  }
+  .delete-btn:hover { background: var(--danger); color: #fff; }
+
+  /* Front / back toggle */
+  .side-toggle {
+    display: inline-flex; margin-bottom: 14px;
+    border: 1.5px solid #d6dae2; border-radius: 999px; overflow: hidden;
+  }
+  .side-toggle button {
+    padding: 7px 26px; border: none; background: #fafafa;
+    cursor: pointer; font-size: .82rem; color: var(--muted);
+  }
+  .side-toggle button.active { background: var(--accent); color: #fff; }
+
+  /* Big preview */
+  .preview-card {
+    background: var(--card); border-radius: var(--radius);
+    padding: 28px; box-shadow: 0 1px 4px rgba(0,0,0,.06); text-align: center;
+  }
+  .preview-card svg {
+    width: 100%; max-width: 500px; height: auto;
+    touch-action: none; user-select: none;
+  }
+  .preview-card h3 { font-size: 1.15rem; margin-top: 10px; }
+  .preview-card p { color: var(--muted); font-size: .85rem; margin-top: 3px; }
+  .canvas-hint { font-size: .75rem; color: var(--muted); margin-top: 8px; }
+
+  .item-group { cursor: grab; }
+  .item-group.dragging { cursor: grabbing; }
+  .resize-handle { cursor: nwse-resize; }
+
+  footer { text-align: center; color: var(--muted); font-size: .8rem; padding: 20px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Your Brand Here</h1>
+  <p>Pick a garment and color, then add your artwork and text.</p>
+</header>
+
+<div class="layout">
+  <!-- ============ CONTROLS ============ -->
+  <aside class="panel">
+    <div class="section">
+      <h2><span class="step-num">1</span>Choose a garment</h2>
+      <div class="garments" id="garmentPicker"></div>
+    </div>
+    <div class="section">
+      <h2><span class="step-num">2</span>Garment color</h2>
+      <div class="swatches" id="colorPicker"></div>
+    </div>
+    <div class="section">
+      <h2><span class="step-num">3</span>Add your design</h2>
+      <div class="add-row">
+        <button class="upload-btn" id="uploadBtn">
+          <span class="big-icon">&#128444;</span><span>Upload<br>artwork</span>
+        </button>
+        <button class="text-btn" id="addTextBtn">
+          <span class="big-icon">T</span><span>Add<br>text</span>
+        </button>
+      </div>
+      <input type="file" id="fileInput" accept="image/png, image/jpeg, image/svg+xml, image/webp">
+      <div class="upload-hint">PNG with transparent background works best.</div>
+    </div>
+
+    <!-- Editor for the selected item -->
+    <div class="section" id="itemEditor">
+      <h2>Selected item</h2>
+      <div id="textControls" style="display:none">
+        <label for="textValue">Text</label>
+        <input type="text" id="textValue" maxlength="40">
+        <label>Text color</label>
+        <div class="text-colors" id="textColors"></div>
+      </div>
+      <label for="sizeSlider">Size</label>
+      <input type="range" id="sizeSlider" min="10" max="200" value="100">
+      <button class="delete-btn" id="deleteBtn">Remove item</button>
+    </div>
+  </aside>
+
+  <!-- ============ PREVIEW ============ -->
+  <main>
+    <div class="preview-card">
+      <div class="side-toggle">
+        <button id="frontBtn" class="active">Front</button>
+        <button id="backBtn">Back</button>
+      </div>
+      <div id="previewSvg"></div>
+      <h3 id="previewName"></h3>
+      <p id="previewDesc"></p>
+      <div class="canvas-hint">Click an item to select it &middot; drag to move &middot; drag the corner handle to resize.</div>
+    </div>
+  </main>
+</div>
+
+<footer>Placeholder mockups &mdash; swap in real product photos anytime.</footer>
+
+<script>
+/* =========================================================
+   GARMENTS — name, description, SVG body.
+   To add a garment type, add an entry here.
+   ========================================================= */
+const GARMENTS = [
+  {
+    name: "T-Shirt",
+    desc: "100% cotton crewneck",
+    front: `
+      <path d="M96 52 L60 72 L28 118 L64 142 L78 124 L78 258
+               Q150 270 222 258 L222 124 L236 142 L272 118 L240 72 L204 52
+               Q178 74 150 74 Q122 74 96 52 Z"
+            fill="#3b4a63" stroke="#2a3550" stroke-width="3" class="garment-fill"/>
+      <path d="M96 52 Q122 74 150 74 Q178 74 204 52 Q180 62 150 62 Q120 62 96 52 Z"
+            fill="rgba(0,0,0,.18)"/>`,
+    back: `
+      <path d="M96 52 L60 72 L28 118 L64 142 L78 124 L78 258
+               Q150 270 222 258 L222 124 L236 142 L272 118 L240 72 L204 52
+               Q178 63 150 63 Q122 63 96 52 Z"
+            fill="#3b4a63" stroke="#2a3550" stroke-width="3" class="garment-fill"/>
+      <path d="M96 52 Q122 63 150 63 Q178 63 204 52 Q180 59 150 59 Q120 59 96 52 Z"
+            fill="rgba(0,0,0,.18)"/>`
+  },
+  {
+    name: "Sweatshirt",
+    desc: "Fleece pullover hoodie",
+    front: `
+      <path d="M92 62 L54 82 L26 150 L58 168 L70 146 L70 252
+               Q150 266 230 252 L230 146 L242 168 L274 150 L246 82 L208 62
+               Q182 84 150 84 Q118 84 92 62 Z"
+            fill="#3b4a63" stroke="#2a3550" stroke-width="3" class="garment-fill"/>
+      <path d="M92 62 Q108 34 150 34 Q192 34 208 62 Q196 86 150 88 Q104 86 92 62 Z"
+            fill="#3b4a63" stroke="#2a3550" stroke-width="3" class="garment-fill"/>
+      <path d="M110 62 Q124 46 150 46 Q176 46 190 62 Q176 76 150 77 Q124 76 110 62 Z"
+            fill="rgba(0,0,0,.25)"/>
+      <path d="M110 210 L190 210 L182 250 L118 250 Z"
+            fill="rgba(0,0,0,.12)" stroke="#2a3550" stroke-width="2" class="garment-stroke"/>
+      <line x1="140" y1="86" x2="138" y2="112" stroke="#e8e8e8" stroke-width="4" stroke-linecap="round"/>
+      <line x1="160" y1="86" x2="162" y2="112" stroke="#e8e8e8" stroke-width="4" stroke-linecap="round"/>`,
+    back: `
+      <path d="M92 62 L54 82 L26 150 L58 168 L70 146 L70 252
+               Q150 266 230 252 L230 146 L242 168 L274 150 L246 82 L208 62
+               Q182 84 150 84 Q118 84 92 62 Z"
+            fill="#3b4a63" stroke="#2a3550" stroke-width="3" class="garment-fill"/>
+      <path d="M104 66 Q104 32 150 32 Q196 32 196 66 L192 108 Q150 120 108 108 Z"
+            fill="#3b4a63" stroke="#2a3550" stroke-width="3" class="garment-fill"/>
+      <path d="M104 66 Q104 32 150 32 Q196 32 196 66 L192 108 Q150 120 108 108 Z"
+            fill="rgba(0,0,0,.14)"/>`
+  },
+  {
+    name: "Hat",
+    desc: "Structured snapback",
+    front: `
+      <path d="M62 158 Q62 74 150 74 Q238 74 238 158 L238 172 L62 172 Z"
+            fill="#3b4a63" stroke="#2a3550" stroke-width="3" class="garment-fill"/>
+      <path d="M150 74 L150 172 M105 82 Q96 120 96 172 M195 82 Q204 120 204 172"
+            fill="none" stroke="rgba(0,0,0,.25)" stroke-width="2"/>
+      <circle cx="150" cy="74" r="6" class="garment-dark" fill="#2a3550"/>
+      <path d="M62 165 Q150 148 238 165 L244 186 Q150 166 56 186 Z"
+            fill="#2a3550" class="garment-dark"/>`,
+    back: `
+      <path d="M62 158 Q62 74 150 74 Q238 74 238 158 L238 178 L62 178 Z"
+            fill="#3b4a63" stroke="#2a3550" stroke-width="3" class="garment-fill"/>
+      <path d="M150 74 L150 178 M105 82 Q96 120 96 178 M195 82 Q204 120 204 178"
+            fill="none" stroke="rgba(0,0,0,.25)" stroke-width="2"/>
+      <circle cx="150" cy="74" r="6" class="garment-dark" fill="#2a3550"/>
+      <!-- snapback vent + strap -->
+      <path d="M128 178 Q150 146 172 178 Z" fill="#fff" stroke="rgba(0,0,0,.3)" stroke-width="2"/>
+      <rect x="130" y="155" width="40" height="11" rx="3" class="garment-dark" fill="#2a3550"/>
+      <circle cx="138" cy="160.5" r="2" fill="rgba(255,255,255,.5)"/>
+      <circle cx="150" cy="160.5" r="2" fill="rgba(255,255,255,.5)"/>
+      <circle cx="162" cy="160.5" r="2" fill="rgba(255,255,255,.5)"/>`
+  }
+];
+
+const COLORS = [
+  { name: "Navy",    fill: "#3b4a63", dark: "#2a3550" },
+  { name: "Black",   fill: "#33363c", dark: "#1f2126" },
+  { name: "Heather", fill: "#9aa2ad", dark: "#7c848f" },
+  { name: "Forest",  fill: "#3d5a45", dark: "#2c4232" },
+  { name: "Maroon",  fill: "#6e3a44", dark: "#552d35" },
+  { name: "Royal",   fill: "#3457b0", dark: "#274389" }
+];
+
+const TEXT_COLORS = ["#ffffff", "#1e2430", "#ffd166", "#d64545", "#7fd1e8"];
+
+let activeGarment = 0;
+let activeColor = 0;
+let activeSide = "front";
+
+/* Items placed on the garment, kept separately for front and back.
+   image: { type, src, cx, cy, w, h  }  (cx,cy = center, SVG coords)
+   text:  { type, text, cx, cy, size, color } */
+let items = { front: [], back: [] };
+const cur = () => items[activeSide];
+let selected = -1;
+
+/* Front / back toggle */
+document.getElementById("frontBtn").onclick = () => { activeSide = "front"; selected = -1; render(); };
+document.getElementById("backBtn").onclick  = () => { activeSide = "back";  selected = -1; render(); };
+
+/* ---------- Build pickers ---------- */
+const garmentPicker = document.getElementById("garmentPicker");
+GARMENTS.forEach((g, i) => {
+  const btn = document.createElement("button");
+  btn.className = "garment-btn";
+  btn.innerHTML = `<svg viewBox="0 0 300 300">${g.front}</svg><span>${g.name}</span>`;
+  btn.onclick = () => { activeGarment = i; render(); };
+  garmentPicker.appendChild(btn);
+});
+
+const colorPicker = document.getElementById("colorPicker");
+COLORS.forEach((c, i) => {
+  const s = document.createElement("button");
+  s.className = "swatch";
+  s.style.background = c.fill;
+  s.title = c.name;
+  s.onclick = () => { activeColor = i; render(); };
+  colorPicker.appendChild(s);
+});
+
+const textColorsDiv = document.getElementById("textColors");
+TEXT_COLORS.forEach(col => {
+  const b = document.createElement("button");
+  b.className = "text-color";
+  b.style.background = col;
+  b.onclick = () => {
+    if (selected >= 0 && cur()[selected].type === "text") {
+      cur()[selected].color = col;
+      render();
+    }
+  };
+  textColorsDiv.appendChild(b);
+});
+
+/* ---------- Add artwork ---------- */
+const fileInput = document.getElementById("fileInput");
+document.getElementById("uploadBtn").onclick = () => fileInput.click();
+
+fileInput.addEventListener("change", () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const src = e.target.result;
+    const img = new Image();
+    img.onload = () => {
+      const ratio = img.width / img.height;
+      let w = 90, h = 90 / ratio;
+      if (ratio < 1) { h = 90; w = 90 * ratio; }
+      cur().push({ type: "image", src, cx: 150, cy: 150, w, h });
+      selected = cur().length - 1;
+      render();
+    };
+    img.src = src;
+  };
+  reader.readAsDataURL(file);
+  fileInput.value = "";
+});
+
+/* ---------- Add text ---------- */
+document.getElementById("addTextBtn").onclick = () => {
+  cur().push({ type: "text", text: "Your Text", cx: 150, cy: 150, size: 24, color: "#ffffff" });
+  selected = cur().length - 1;
+  render();
+  document.getElementById("textValue").focus();
+  document.getElementById("textValue").select();
+};
+
+/* ---------- Item editor ---------- */
+const editor = document.getElementById("itemEditor");
+const textControls = document.getElementById("textControls");
+const textValue = document.getElementById("textValue");
+const sizeSlider = document.getElementById("sizeSlider");
+
+textValue.addEventListener("input", () => {
+  if (selected >= 0 && cur()[selected].type === "text") {
+    cur()[selected].text = textValue.value;
+    render();
+  }
+});
+
+sizeSlider.addEventListener("input", () => {
+  if (selected < 0) return;
+  const it = cur()[selected];
+  const v = +sizeSlider.value;
+  if (it.type === "text") it.size = v * 0.4;           /* 4 – 80 px */
+  else { const r = it.w / it.h; it.w = v * 1.4; it.h = it.w / r; } /* 14 – 280 */
+  render();
+});
+
+document.getElementById("deleteBtn").onclick = () => {
+  if (selected < 0) return;
+  cur().splice(selected, 1);
+  selected = -1;
+  render();
+};
+
+/* ---------- Rendering ---------- */
+const previewDiv = document.getElementById("previewSvg");
+
+function itemMarkup(it, i) {
+  const sel = i === selected;
+  let inner, bx, by, bw, bh;
+  if (it.type === "image") {
+    bw = it.w; bh = it.h; bx = it.cx - bw / 2; by = it.cy - bh / 2;
+    inner = `<image href="${it.src}" x="${bx}" y="${by}" width="${bw}" height="${bh}" preserveAspectRatio="xMidYMid meet"/>`;
+  } else {
+    bw = Math.max(it.text.length * it.size * 0.62, it.size); bh = it.size * 1.2;
+    bx = it.cx - bw / 2; by = it.cy - bh / 2;
+    inner = `<text x="${it.cx}" y="${it.cy}" text-anchor="middle" dominant-baseline="central"
+             font-family="Arial Black, Arial, sans-serif" font-weight="900"
+             font-size="${it.size}" fill="${it.color}">${escapeHtml(it.text)}</text>`;
+  }
+  const selBox = sel ? `
+    <rect x="${bx - 4}" y="${by - 4}" width="${bw + 8}" height="${bh + 8}"
+          fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <circle class="resize-handle" data-idx="${i}" cx="${bx + bw + 4}" cy="${by + bh + 4}" r="7"
+            fill="var(--accent)" stroke="#fff" stroke-width="2"/>` : "";
+  return `<g class="item-group" data-idx="${i}">${inner}</g>${selBox}`;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function render() {
+  document.querySelectorAll(".garment-btn").forEach((b, i) =>
+    b.classList.toggle("active", i === activeGarment));
+  document.querySelectorAll(".swatch").forEach((s, i) =>
+    s.classList.toggle("active", i === activeColor));
+  document.getElementById("frontBtn").classList.toggle("active", activeSide === "front");
+  document.getElementById("backBtn").classList.toggle("active", activeSide === "back");
+
+  const g = GARMENTS[activeGarment];
+  const c = COLORS[activeColor];
+
+  previewDiv.innerHTML =
+    `<svg id="canvas" viewBox="0 0 300 300" aria-label="${g.name} ${activeSide} preview">
+       <rect width="300" height="300" fill="transparent"/>
+       <g class="garment">${g[activeSide]}</g>
+       ${cur().map(itemMarkup).join("")}
+     </svg>`;
+  document.getElementById("previewName").textContent =
+    g.name + (activeSide === "back" ? " — Back" : " — Front");
+  document.getElementById("previewDesc").textContent = g.desc;
+
+  document.querySelectorAll(".garment-fill").forEach(el => {
+    el.setAttribute("fill", c.fill);
+    el.setAttribute("stroke", c.dark);
+  });
+  document.querySelectorAll(".garment-stroke").forEach(el =>
+    el.setAttribute("stroke", c.dark));
+  document.querySelectorAll(".garment-dark").forEach(el =>
+    el.setAttribute("fill", c.dark));
+
+  /* Editor panel state */
+  if (selected >= 0) {
+    editor.classList.add("visible");
+    const it = cur()[selected];
+    if (it.type === "text") {
+      textControls.style.display = "block";
+      textValue.value = it.text;
+      sizeSlider.value = it.size / 0.4;
+      document.querySelectorAll(".text-color").forEach((b, i) =>
+        b.classList.toggle("active", TEXT_COLORS[i] === it.color));
+    } else {
+      textControls.style.display = "none";
+      sizeSlider.value = it.w / 1.4;
+    }
+  } else {
+    editor.classList.remove("visible");
+  }
+
+  attachCanvasEvents();
+}
+
+/* ---------- Drag / resize ---------- */
+function svgPoint(svg, clientX, clientY) {
+  const pt = svg.createSVGPoint();
+  pt.x = clientX; pt.y = clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+
+function attachCanvasEvents() {
+  const svg = document.getElementById("canvas");
+  if (!svg) return;
+  let mode = null;      /* "drag" | "resize" */
+  let idx = -1;
+  let start = null, orig = null;
+
+  svg.addEventListener("pointerdown", e => {
+    const handle = e.target.closest(".resize-handle");
+    const group = e.target.closest(".item-group");
+    if (handle) {
+      mode = "resize"; idx = +handle.dataset.idx;
+    } else if (group) {
+      mode = "drag"; idx = +group.dataset.idx;
+      if (idx !== selected) { selected = idx; render(); return; }
+      group.classList.add("dragging");
+    } else {
+      selected = -1; render(); return;
+    }
+    selected = idx;
+    start = svgPoint(svg, e.clientX, e.clientY);
+    orig = { ...cur()[idx] };
+    svg.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+
+  svg.addEventListener("pointermove", e => {
+    if (!mode || idx < 0) return;
+    const p = svgPoint(svg, e.clientX, e.clientY);
+    const it = cur()[idx];
+    if (mode === "drag") {
+      it.cx = Math.min(290, Math.max(10, orig.cx + p.x - start.x));
+      it.cy = Math.min(290, Math.max(10, orig.cy + p.y - start.y));
+    } else {
+      const d = Math.max(p.x - orig.cx, p.y - orig.cy) * 2;
+      if (it.type === "image") {
+        const r = orig.w / orig.h;
+        it.w = Math.max(14, d);
+        it.h = it.w / r;
+      } else {
+        it.size = Math.max(6, d / (Math.max(it.text.length * 0.62, 1)));
+      }
+    }
+    softRender();
+  });
+
+  const end = e => {
+    if (mode) { mode = null; idx = -1; render(); }
+  };
+  svg.addEventListener("pointerup", end);
+  svg.addEventListener("pointercancel", end);
+}
+
+/* Re-render only the SVG contents during drag (keeps pointer capture alive) */
+function softRender() {
+  const svg = document.getElementById("canvas");
+  const g = GARMENTS[activeGarment];
+  const c = COLORS[activeColor];
+  svg.innerHTML =
+    `<rect width="300" height="300" fill="transparent"/>
+     <g class="garment">${g[activeSide]}</g>
+     ${cur().map(itemMarkup).join("")}`;
+  svg.querySelectorAll(".garment-fill").forEach(el => {
+    el.setAttribute("fill", c.fill); el.setAttribute("stroke", c.dark);
+  });
+  svg.querySelectorAll(".garment-stroke").forEach(el => el.setAttribute("stroke", c.dark));
+  svg.querySelectorAll(".garment-dark").forEach(el => el.setAttribute("fill", c.dark));
+}
+
+render();
+</script>
+</body>
+</html>
