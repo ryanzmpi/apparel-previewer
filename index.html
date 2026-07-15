@@ -125,10 +125,12 @@
   #quoteForm label {
     display: block; font-size: .72rem; color: var(--muted); margin: 10px 0 4px;
   }
-  #quoteForm input {
+  #quoteForm input, #quoteForm textarea {
     width: 100%; padding: 8px 10px; font-size: .9rem;
     border: 1.5px solid #d6dae2; border-radius: 8px;
+    font-family: inherit;
   }
+  #quoteForm textarea { resize: vertical; }
   .send-btn {
     margin-top: 14px; width: 100%; padding: 10px;
     background: var(--accent); border: none; color: #fff;
@@ -267,6 +269,9 @@
         <input id="qEmail" name="email" type="email" required autocomplete="email">
         <label for="qPhone">Phone</label>
         <input id="qPhone" name="phone" type="tel" autocomplete="tel">
+        <label for="qComments">Comments</label>
+        <textarea id="qComments" name="comments" rows="4" maxlength="1000"
+                  placeholder="Quantity, sizes, deadline, questions&hellip;"></textarea>
         <input type="hidden" name="_subject" id="fSubject" value="Apparel design request">
         <input type="hidden" name="_template" value="table">
         <input type="hidden" name="_captcha" value="false">
