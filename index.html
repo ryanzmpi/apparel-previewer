@@ -121,6 +121,25 @@
   }
   .delete-btn:hover { background: var(--danger); color: #fff; }
 
+  /* Quote form */
+  #quoteForm label {
+    display: block; font-size: .72rem; color: var(--muted); margin: 10px 0 4px;
+  }
+  #quoteForm input {
+    width: 100%; padding: 8px 10px; font-size: .9rem;
+    border: 1.5px solid #d6dae2; border-radius: 8px;
+  }
+  .send-btn {
+    margin-top: 14px; width: 100%; padding: 10px;
+    background: var(--accent); border: none; color: #fff;
+    border-radius: 8px; cursor: pointer; font-size: .9rem; font-weight: 600;
+  }
+  .send-btn:hover { filter: brightness(1.08); }
+  .send-btn:disabled { opacity: .6; cursor: default; }
+  #quoteStatus { font-size: .78rem; margin-top: 10px; min-height: 1.2em; }
+  #quoteStatus.ok { color: #2e7d43; }
+  #quoteStatus.err { color: var(--danger); }
+
   /* Front / back toggle */
   .side-toggle {
     display: inline-flex; margin-bottom: 14px;
@@ -235,6 +254,21 @@
       <label for="sizeSlider">Size</label>
       <input type="range" id="sizeSlider" min="10" max="200" value="100">
       <button class="delete-btn" id="deleteBtn">Remove item</button>
+    </div>
+
+    <!-- Quote request -->
+    <div class="section">
+      <h2><span class="step-num">5</span>Send your design</h2>
+      <form id="quoteForm">
+        <label for="qName">Name *</label>
+        <input id="qName" type="text" required autocomplete="name">
+        <label for="qEmail">Email *</label>
+        <input id="qEmail" type="email" required autocomplete="email">
+        <label for="qPhone">Phone</label>
+        <input id="qPhone" type="tel" autocomplete="tel">
+        <button type="submit" class="send-btn" id="sendBtn">Send to Marathon Printing</button>
+        <div id="quoteStatus"></div>
+      </form>
     </div>
   </aside>
 
@@ -640,7 +674,7 @@ fileInput.addEventListener("change", () => {
       const ratio = img.width / img.height;
       let w = 90, h = 90 / ratio;
       if (ratio < 1) { h = 90; w = 90 * ratio; }
-      cur().push({ type: "image", src, cx: 150, cy: 150, w, h });
+      cur().push({ type: "image", src, cx: 150, cy: 150, w, h, file, name: file.name });
       selected = cur().length - 1;
       render();
     };
@@ -858,6 +892,175 @@ function softRender() {
     svg.querySelectorAll(".garment-dark").forEach(el => el.setAttribute("fill", c.dark));
   }
 }
+
+/* =========================================================
+   QUOTE FORM — sends details + design files to
+   sales@marathononline.com via FormSubmit (formsubmit.co).
+   ========================================================= */
+const SALES_EMAIL = "sales@marathononline.com";
+
+/* Item markup without selection chrome, for export */
+function itemExport(it) {
+  if (it.type === "image") {
+    return `<image href="${it.src}" x="${it.cx - it.w / 2}" y="${it.cy - it.h / 2}"
+             width="${it.w}" height="${it.h}" preserveAspectRatio="xMidYMid meet"/>`;
+  }
+  return `<text x="${it.cx}" y="${it.cy}" text-anchor="middle" dominant-baseline="central"
+           font-family="Arial Black, Arial, sans-serif" font-weight="900"
+           font-size="${it.size}" fill="${it.color}">${escapeHtml(it.text)}</text>`;
+}
+
+/* Self-contained SVG of one side of the current design */
+function composeSVG(side, garmentHref) {
+  const g = G();
+  let layer;
+  if (g.type === "photo") {
+    const href = garmentHref || ssImg(g.colors[activeColor].id, side, "fl");
+    layer = `<image href="${href}" x="0" y="0" width="300" height="300" preserveAspectRatio="xMidYMid meet"/>`;
+  } else {
+    layer = g[side];
+  }
+  let str = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="900" height="900">` +
+            `<rect width="300" height="300" fill="#ffffff"/>${layer}` +
+            items[side].map(itemExport).join("") + `</svg>`;
+  if (g.type !== "photo") {
+    const doc = new DOMParser().parseFromString(str, "image/svg+xml");
+    const c = COLORS[activeColor];
+    doc.querySelectorAll(".garment-fill").forEach(el => {
+      el.setAttribute("fill", c.fill); el.setAttribute("stroke", c.dark);
+    });
+    doc.querySelectorAll(".garment-stroke").forEach(el => el.setAttribute("stroke", c.dark));
+    doc.querySelectorAll(".garment-dark").forEach(el => el.setAttribute("fill", c.dark));
+    str = new XMLSerializer().serializeToString(doc.documentElement);
+  }
+  return str;
+}
+
+const blobToDataURL = blob => new Promise((res, rej) => {
+  const r = new FileReader();
+  r.onload = () => res(r.result);
+  r.onerror = rej;
+  r.readAsDataURL(blob);
+});
+
+function svgToPng(svgStr, size) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(new Blob([svgStr], { type: "image/svg+xml" }));
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const cv = document.createElement("canvas");
+        cv.width = size; cv.height = size;
+        const ctx = cv.getContext("2d");
+        ctx.drawImage(img, 0, 0, size, size);
+        URL.revokeObjectURL(url);
+        cv.toBlob(b => b ? res(b) : rej(new Error("toBlob")), "image/png");
+      } catch (err) { URL.revokeObjectURL(url); rej(err); }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("svg load")); };
+    img.src = url;
+  });
+}
+
+/* Snapshot one side as PNG; falls back to an SVG file if the
+   garment photo can't be embedded (cross-origin restrictions). */
+async function snapshot(side) {
+  const g = G();
+  let svgStr;
+  if (g.type === "photo") {
+    try {
+      const url = ssImg(g.colors[activeColor].id, side, "fl");
+      const resp = await fetch(url, { mode: "cors" });
+      if (!resp.ok) throw new Error("fetch");
+      svgStr = composeSVG(side, await blobToDataURL(await resp.blob()));
+    } catch (e) {
+      return { blob: new Blob([composeSVG(side)], { type: "image/svg+xml" }), ext: "svg" };
+    }
+  } else {
+    svgStr = composeSVG(side);
+  }
+  try {
+    return { blob: await svgToPng(svgStr, 900), ext: "png" };
+  } catch (e) {
+    return { blob: new Blob([composeSVG(side)], { type: "image/svg+xml" }), ext: "svg" };
+  }
+}
+
+function designSummary(side) {
+  if (!items[side].length) return "none";
+  return items[side].map(it => it.type === "text"
+    ? `Text "${it.text}" (${it.color}, size ${Math.round(it.size)}, center ${Math.round(it.cx)},${Math.round(it.cy)})`
+    : `Artwork "${it.name || "image"}" (${Math.round(it.w)}x${Math.round(it.h)}, center ${Math.round(it.cx)},${Math.round(it.cy)})`
+  ).join(" | ");
+}
+
+document.getElementById("quoteForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const btn = document.getElementById("sendBtn");
+  const status = document.getElementById("quoteStatus");
+  const g = G();
+  const colorList = g.type === "photo" ? g.colors : COLORS;
+  const color = colorList[activeColor];
+
+  btn.disabled = true;
+  status.className = "";
+  status.textContent = "Preparing design files…";
+
+  try {
+    const fd = new FormData();
+    fd.append("name", document.getElementById("qName").value.trim());
+    fd.append("email", document.getElementById("qEmail").value.trim());
+    fd.append("phone", document.getElementById("qPhone").value.trim() || "not provided");
+    fd.append("_subject", "Apparel design request from " + document.getElementById("qName").value.trim());
+    fd.append("_template", "table");
+    fd.append("_captcha", "false");
+    fd.append("garment", `${CATEGORIES[activeCategory].name} — ${g.name} (${g.desc})`);
+    fd.append("color", color.name);
+    if (g.type === "photo") {
+      fd.append("product_photo_front", ssImg(color.id, "front", "fl"));
+      fd.append("product_photo_back", ssImg(color.id, "back", "fl"));
+    }
+    fd.append("design_front", designSummary("front"));
+    fd.append("design_back", designSummary("back"));
+
+    /* Attach design snapshots for any side that has items */
+    let n = 1;
+    for (const side of ["front", "back"]) {
+      if (!items[side].length) continue;
+      const snap = await snapshot(side);
+      fd.append("attachment" + n++,
+        new File([snap.blob], `design-${side}.${snap.ext}`, { type: snap.blob.type }));
+    }
+    /* Attach the customer's original artwork files (deduplicated) */
+    const seen = new Set();
+    for (const side of ["front", "back"]) {
+      for (const it of items[side]) {
+        if (it.type === "image" && it.file && !seen.has(it.file)) {
+          seen.add(it.file);
+          fd.append("attachment" + n++, it.file, it.file.name);
+        }
+      }
+    }
+
+    status.textContent = "Sending…";
+    const resp = await fetch("https://formsubmit.co/ajax/" + SALES_EMAIL, {
+      method: "POST",
+      body: fd,
+      headers: { "Accept": "application/json" }
+    });
+    const json = await resp.json();
+    if (!resp.ok || !(json.success === true || json.success === "true")) throw new Error("send");
+
+    status.className = "ok";
+    status.textContent = "Sent! We'll be in touch soon.";
+    e.target.reset();
+  } catch (err) {
+    status.className = "err";
+    status.textContent = "Couldn't send automatically — please email " + SALES_EMAIL + " directly.";
+  } finally {
+    btn.disabled = false;
+  }
+});
 
 buildStylePicker();
 buildColorPicker();
