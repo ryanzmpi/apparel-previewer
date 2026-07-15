@@ -63,6 +63,7 @@
   .garment-btn:hover { transform: translateY(-2px); }
   .garment-btn.active { border-color: var(--accent); background: #eef4ff; }
   .garment-btn svg { width: 100%; height: auto; display: block; }
+  .garment-btn img { width: 100%; height: auto; display: block; border-radius: 6px; }
   .garment-btn span {
     display: block; font-size: .72rem; color: var(--muted);
     text-align: center; margin-top: 4px;
@@ -156,7 +157,7 @@
 
 <header>
   <h1>Your Brand Here</h1>
-  <p>Pick a garment and color, then add your artwork and text.</p>
+  <p>Pick a garment, style, and color, then add your artwork and text.</p>
 </header>
 
 <div class="layout">
@@ -166,12 +167,16 @@
       <h2><span class="step-num">1</span>Choose a garment</h2>
       <div class="garments" id="garmentPicker"></div>
     </div>
+    <div class="section" id="styleSection">
+      <h2><span class="step-num">2</span>Choose a style</h2>
+      <div class="garments" id="stylePicker"></div>
+    </div>
     <div class="section">
-      <h2><span class="step-num">2</span>Garment color</h2>
+      <h2><span class="step-num">3</span>Garment color</h2>
       <div class="swatches" id="colorPicker"></div>
     </div>
     <div class="section">
-      <h2><span class="step-num">3</span>Add your design</h2>
+      <h2><span class="step-num">4</span>Add your design</h2>
       <div class="add-row">
         <button class="upload-btn" id="uploadBtn">
           <span class="big-icon">&#128444;</span><span>Upload<br>artwork</span>
@@ -221,27 +226,216 @@
    GARMENTS — name, description, SVG body.
    To add a garment type, add an entry here.
    ========================================================= */
-const GARMENTS = [
+/* Real S&S Activewear products use type:"photo" — colors reference
+   S&S CDN image IDs. Image URL pattern:
+   https://cdn.ssactivewear.com/Images/Color/{id}_{f|b}_{fs|fm|fl}.jpg */
+const ssImg = (id, side, size) =>
+  `https://cdn.ssactivewear.com/Images/Color/${id}_${side === "back" ? "b" : "f"}_${size}.jpg`;
+
+/* CATEGORIES → each category has one or more STYLES.
+   A style is either a real product (type:"photo", S&S colors)
+   or a placeholder SVG drawing (front/back markup). */
+const CATEGORIES = [
   {
-    name: "T-Shirt",
-    desc: "100% cotton crewneck",
-    front: `
-      <path d="M96 52 L60 72 L28 118 L64 142 L78 124 L78 258
-               Q150 270 222 258 L222 124 L236 142 L272 118 L240 72 L204 52
-               Q178 74 150 74 Q122 74 96 52 Z"
-            fill="#3b4a63" stroke="#2a3550" stroke-width="3" class="garment-fill"/>
-      <path d="M96 52 Q122 74 150 74 Q178 74 204 52 Q180 62 150 62 Q120 62 96 52 Z"
-            fill="rgba(0,0,0,.18)"/>`,
-    back: `
-      <path d="M96 52 L60 72 L28 118 L64 142 L78 124 L78 258
-               Q150 270 222 258 L222 124 L236 142 L272 118 L240 72 L204 52
-               Q178 63 150 63 Q122 63 96 52 Z"
-            fill="#3b4a63" stroke="#2a3550" stroke-width="3" class="garment-fill"/>
-      <path d="M96 52 Q122 63 150 63 Q178 63 204 52 Q180 59 150 59 Q120 59 96 52 Z"
-            fill="rgba(0,0,0,.18)"/>`
+  name: "T-Shirts",
+  styles: [
+  {
+    name: "Heavy Cotton",
+    desc: "Gildan 5000 · Heavy Cotton™ · 5.3 oz 100% cotton",
+    type: "photo",
+    colors: [
+      { name: "White", id: "16813" },
+      { name: "Black", id: "16787" },
+      { name: "Antique Cherry Red", id: "33476" },
+      { name: "Antique Irish Green", id: "33477" },
+      { name: "Antique Jade Dome", id: "33496" },
+      { name: "Antique Orange", id: "33499" },
+      { name: "Antique Sapphire", id: "33483" },
+      { name: "Aquatic", id: "114510" },
+      { name: "Ash", id: "16785" },
+      { name: "Azalea", id: "16786" },
+      { name: "Berry", id: "33485" },
+      { name: "Blackberry", id: "33481" },
+      { name: "Blue Dusk", id: "114522" },
+      { name: "Brown Savana", id: "33488" },
+      { name: "Cardinal", id: "16788" },
+      { name: "Carolina Blue", id: "16789" },
+      { name: "Charcoal", id: "16790" },
+      { name: "Cobalt", id: "40523" },
+      { name: "Coral Silk", id: "33479" },
+      { name: "Cornsilk", id: "42437" },
+      { name: "Daisy", id: "16791" },
+      { name: "Dark Chocolate", id: "30025" },
+      { name: "Dark Heather", id: "40520" },
+      { name: "Dusty Rose", id: "114512" },
+      { name: "Electric Green", id: "37317" },
+      { name: "Fan Dark Green", id: "137508" },
+      { name: "Fan Dark Purple", id: "137509" },
+      { name: "Fan Deep Royal", id: "137510" },
+      { name: "Fan Marine Green", id: "137512" },
+      { name: "Forest Green", id: "16793" },
+      { name: "Garnet", id: "32126" },
+      { name: "Gold", id: "30026" },
+      { name: "Graphite Heather", id: "46045" },
+      { name: "Gravel", id: "33486" },
+      { name: "Heather Military Green", id: "33475" },
+      { name: "Heather Navy", id: "68108" },
+      { name: "Heather Neon Coral", id: "107672" },
+      { name: "Heather Radiant Orchid", id: "52325" },
+      { name: "Heather Red", id: "33487" },
+      { name: "Heather Sapphire", id: "33474" },
+      { name: "Heliconia", id: "32127" },
+      { name: "Ice Grey", id: "37312" },
+      { name: "Indigo Blue", id: "16795" },
+      { name: "Iris", id: "107675" },
+      { name: "Irish Green", id: "30027" },
+      { name: "Jade Dome", id: "137507" },
+      { name: "Kiwi", id: "30028" },
+      { name: "Light Blue", id: "16798" },
+      { name: "Light Pink", id: "30029" },
+      { name: "Lilac", id: "37313" },
+      { name: "Lime", id: "30030" },
+      { name: "Maroon", id: "27238" },
+      { name: "Midnight", id: "37314" },
+      { name: "Military Green", id: "30031" },
+      { name: "Mint Green", id: "40519" },
+      { name: "Natural", id: "16802" },
+      { name: "Navy", id: "16803" },
+      { name: "Neon Blue", id: "42440" },
+      { name: "Neon Green", id: "42441" },
+      { name: "Off White", id: "114519" },
+      { name: "Old Gold", id: "32128" },
+      { name: "Orange", id: "16804" },
+      { name: "Prairie Dust", id: "107673" },
+      { name: "Purple", id: "30032" },
+      { name: "Red", id: "27239" },
+      { name: "Royal", id: "16806" },
+      { name: "Russet", id: "33482" },
+      { name: "Safety Green", id: "40521" },
+      { name: "Safety Orange", id: "40522" },
+      { name: "Safety Pink", id: "42438" },
+      { name: "Sand", id: "16807" },
+      { name: "Sapphire", id: "16808" },
+      { name: "Sky", id: "16809" },
+      { name: "Sport Grey", id: "16810" },
+      { name: "Sunset", id: "37315" },
+      { name: "Tangerine", id: "16811" },
+      { name: "Tennessee Orange", id: "32129" },
+      { name: "Texas Orange", id: "42439" },
+      { name: "Tropical Blue", id: "37316" },
+      { name: "Turf Green", id: "33495" },
+      { name: "Tweed", id: "33480" },
+      { name: "Violet", id: "16812" },
+      { name: "Yellow Haze", id: "16814" }
+    ]
   },
   {
-    name: "Sweatshirt",
+    name: "Ultra Cotton",
+    desc: "Gildan 2000 · Ultra Cotton™ · 6.0 oz 100% cotton",
+    type: "photo",
+    colors: [
+      { name: "White", id: "17130" },
+      { name: "Black", id: "17075" },
+      { name: "Antique Cherry Red", id: "33287" },
+      { name: "Antique Irish Green", id: "33284" },
+      { name: "Antique Royal", id: "33286" },
+      { name: "Ash", id: "17072" },
+      { name: "Azalea", id: "17074" },
+      { name: "Blue Dusk", id: "17076" },
+      { name: "Cardinal Red", id: "17077" },
+      { name: "Carolina Blue", id: "17078" },
+      { name: "Charcoal", id: "29996" },
+      { name: "Cherry Red", id: "17081" },
+      { name: "Cornsilk", id: "42436" },
+      { name: "Daisy", id: "17083" },
+      { name: "Dark Chocolate", id: "17084" },
+      { name: "Dark Heather", id: "17085" },
+      { name: "Forest", id: "29997" },
+      { name: "Galapagos Blue", id: "33285" },
+      { name: "Gold", id: "29998" },
+      { name: "Heather Cardinal", id: "27282" },
+      { name: "Heather Indigo", id: "17090" },
+      { name: "Heather Navy", id: "17091" },
+      { name: "Heather Sapphire", id: "33280" },
+      { name: "Heliconia", id: "17092" },
+      { name: "Ice Grey", id: "29999" },
+      { name: "Indigo Blue", id: "17095" },
+      { name: "Iris", id: "17096" },
+      { name: "Irish Green", id: "17097" },
+      { name: "Jade Dome", id: "30000" },
+      { name: "Kelly", id: "27283" },
+      { name: "Kiwi", id: "17099" },
+      { name: "Light Blue", id: "30001" },
+      { name: "Light Pink", id: "30002" },
+      { name: "Lime", id: "17102" },
+      { name: "Maroon", id: "27285" },
+      { name: "Metro Blue", id: "30003" },
+      { name: "Military Green", id: "17104" },
+      { name: "Mint Green", id: "40511" },
+      { name: "Natural", id: "17105" },
+      { name: "Navy", id: "17106" },
+      { name: "Olive", id: "17107" },
+      { name: "Orange", id: "17108" },
+      { name: "Orchid", id: "17109" },
+      { name: "PFD White", id: "17111" },
+      { name: "Pistachio", id: "27287" },
+      { name: "Prairie Dust", id: "17113" },
+      { name: "Purple", id: "30004" },
+      { name: "Red", id: "27288" },
+      { name: "Royal", id: "17115" },
+      { name: "Safety Green", id: "17116" },
+      { name: "Safety Orange", id: "27289" },
+      { name: "Safety Pink", id: "33281" },
+      { name: "Sand", id: "17118" },
+      { name: "Sapphire", id: "30005" },
+      { name: "Sky", id: "17121" },
+      { name: "Sport Grey", id: "17122" },
+      { name: "Stone Blue", id: "17123" },
+      { name: "Tan", id: "30006" },
+      { name: "Tangerine", id: "17125" },
+      { name: "Texas Orange", id: "17126" },
+      { name: "Vegas Gold", id: "17128" }
+    ]
+  },
+  {
+    name: "Softstyle CVC",
+    desc: "Gildan 64000CVC · 60/40 ring-spun cotton/poly · XS–4XL",
+    type: "photo",
+    colors: [
+      { name: "White",              id: "87976" },
+      { name: "Pitch Black",        id: "87969" },
+      { name: "Pitch Black Mist",   id: "87970" },
+      { name: "Sport Grey",         id: "107648" },
+      { name: "Cement",             id: "87964" },
+      { name: "Gunmetal",           id: "87966" },
+      { name: "Slate",              id: "87974" },
+      { name: "Navy Mist",          id: "87968" },
+      { name: "Royal Mist",         id: "87973" },
+      { name: "Steel Blue",         id: "87975" },
+      { name: "Carolina Blue Mist", id: "107067" },
+      { name: "Light Blue Mist",    id: "107646" },
+      { name: "Caribbean Mist",     id: "104331" },
+      { name: "Kelly Mist",         id: "107066" },
+      { name: "Cactus",             id: "87963" },
+      { name: "Red Mist",           id: "87972" },
+      { name: "Maroon Mist",        id: "87967" },
+      { name: "Plumrose",           id: "87971" },
+      { name: "Amethyst",           id: "87962" },
+      { name: "Dusty Rose",         id: "87965" },
+      { name: "Pink Lemonade Mist", id: "107642" },
+      { name: "Dune Mist",          id: "104329" },
+      { name: "Daisy Mist",         id: "107644" },
+      { name: "Tangerine Mist",     id: "107641" },
+      { name: "Cocoa Mist",         id: "107643" }
+    ]
+  }
+  ]
+  },
+  {
+  name: "Sweatshirts",
+  styles: [
+  {
+    name: "Classic Hoodie",
     desc: "Fleece pullover hoodie",
     front: `
       <path d="M92 62 L54 82 L26 150 L58 168 L70 146 L70 252
@@ -265,9 +459,14 @@ const GARMENTS = [
             fill="#3b4a63" stroke="#2a3550" stroke-width="3" class="garment-fill"/>
       <path d="M104 66 Q104 32 150 32 Q196 32 196 66 L192 108 Q150 120 108 108 Z"
             fill="rgba(0,0,0,.14)"/>`
+  }
+  ]
   },
   {
-    name: "Hat",
+  name: "Hats",
+  styles: [
+  {
+    name: "Snapback",
     desc: "Structured snapback",
     front: `
       <path d="M62 158 Q62 74 150 74 Q238 74 238 158 L238 172 L62 172 Z"
@@ -290,6 +489,8 @@ const GARMENTS = [
       <circle cx="150" cy="160.5" r="2" fill="rgba(255,255,255,.5)"/>
       <circle cx="162" cy="160.5" r="2" fill="rgba(255,255,255,.5)"/>`
   }
+  ]
+  }
 ];
 
 const COLORS = [
@@ -303,9 +504,12 @@ const COLORS = [
 
 const TEXT_COLORS = ["#ffffff", "#1e2430", "#ffd166", "#d64545", "#7fd1e8"];
 
-let activeGarment = 0;
+let activeCategory = 0;
+let activeStyle = 0;
 let activeColor = 0;
 let activeSide = "front";
+/* The currently selected style object */
+const G = () => CATEGORIES[activeCategory].styles[activeStyle];
 
 /* Items placed on the garment, kept separately for front and back.
    image: { type, src, cx, cy, w, h  }  (cx,cy = center, SVG coords)
@@ -319,24 +523,59 @@ document.getElementById("frontBtn").onclick = () => { activeSide = "front"; sele
 document.getElementById("backBtn").onclick  = () => { activeSide = "back";  selected = -1; render(); };
 
 /* ---------- Build pickers ---------- */
+function styleThumb(g, label) {
+  if (g.type === "photo") {
+    return `<img src="${ssImg(g.colors[0].id, "front", "fs")}" alt="${label}"><span>${label}</span>`;
+  }
+  return `<svg viewBox="0 0 300 300">${g.front}</svg><span>${label}</span>`;
+}
+
 const garmentPicker = document.getElementById("garmentPicker");
-GARMENTS.forEach((g, i) => {
+CATEGORIES.forEach((cat, i) => {
   const btn = document.createElement("button");
   btn.className = "garment-btn";
-  btn.innerHTML = `<svg viewBox="0 0 300 300">${g.front}</svg><span>${g.name}</span>`;
-  btn.onclick = () => { activeGarment = i; render(); };
+  btn.innerHTML = styleThumb(cat.styles[0], cat.name);
+  btn.onclick = () => {
+    activeCategory = i; activeStyle = 0; activeColor = 0;
+    buildStylePicker(); buildColorPicker(); render();
+  };
   garmentPicker.appendChild(btn);
 });
 
+const stylePicker = document.getElementById("stylePicker");
+function buildStylePicker() {
+  stylePicker.innerHTML = "";
+  const styles = CATEGORIES[activeCategory].styles;
+  /* Hide the style step when a category has only one option */
+  document.getElementById("styleSection").style.display =
+    styles.length > 1 ? "" : "none";
+  styles.forEach((s, i) => {
+    const btn = document.createElement("button");
+    btn.className = "garment-btn";
+    btn.innerHTML = styleThumb(s, s.name);
+    btn.onclick = () => { activeStyle = i; activeColor = 0; buildColorPicker(); render(); };
+    stylePicker.appendChild(btn);
+  });
+}
+
 const colorPicker = document.getElementById("colorPicker");
-COLORS.forEach((c, i) => {
-  const s = document.createElement("button");
-  s.className = "swatch";
-  s.style.background = c.fill;
-  s.title = c.name;
-  s.onclick = () => { activeColor = i; render(); };
-  colorPicker.appendChild(s);
-});
+function buildColorPicker() {
+  colorPicker.innerHTML = "";
+  const g = G();
+  const list = g.type === "photo" ? g.colors : COLORS;
+  list.forEach((c, i) => {
+    const s = document.createElement("button");
+    s.className = "swatch";
+    if (g.type === "photo") {
+      s.style.background = `url('${ssImg(c.id, "front", "fs")}') center/cover #fff`;
+    } else {
+      s.style.background = c.fill;
+    }
+    s.title = c.name;
+    s.onclick = () => { activeColor = i; render(); };
+    colorPicker.appendChild(s);
+  });
+}
 
 const textColorsDiv = document.getElementById("textColors");
 TEXT_COLORS.forEach(col => {
@@ -444,34 +683,39 @@ function escapeHtml(s) {
 }
 
 function render() {
-  document.querySelectorAll(".garment-btn").forEach((b, i) =>
-    b.classList.toggle("active", i === activeGarment));
+  garmentPicker.querySelectorAll(".garment-btn").forEach((b, i) =>
+    b.classList.toggle("active", i === activeCategory));
+  stylePicker.querySelectorAll(".garment-btn").forEach((b, i) =>
+    b.classList.toggle("active", i === activeStyle));
   document.querySelectorAll(".swatch").forEach((s, i) =>
     s.classList.toggle("active", i === activeColor));
   document.getElementById("frontBtn").classList.toggle("active", activeSide === "front");
   document.getElementById("backBtn").classList.toggle("active", activeSide === "back");
 
-  const g = GARMENTS[activeGarment];
-  const c = COLORS[activeColor];
+  const g = G();
+  const colorName = (g.type === "photo" ? g.colors : COLORS)[activeColor].name;
 
   previewDiv.innerHTML =
     `<svg id="canvas" viewBox="0 0 300 300" aria-label="${g.name} ${activeSide} preview">
        <rect width="300" height="300" fill="transparent"/>
-       <g class="garment">${g[activeSide]}</g>
+       <g class="garment">${garmentLayer(g)}</g>
        ${cur().map(itemMarkup).join("")}
      </svg>`;
   document.getElementById("previewName").textContent =
-    g.name + (activeSide === "back" ? " — Back" : " — Front");
+    g.name + " — " + colorName + (activeSide === "back" ? " (Back)" : " (Front)");
   document.getElementById("previewDesc").textContent = g.desc;
 
-  document.querySelectorAll(".garment-fill").forEach(el => {
-    el.setAttribute("fill", c.fill);
-    el.setAttribute("stroke", c.dark);
-  });
-  document.querySelectorAll(".garment-stroke").forEach(el =>
-    el.setAttribute("stroke", c.dark));
-  document.querySelectorAll(".garment-dark").forEach(el =>
-    el.setAttribute("fill", c.dark));
+  if (g.type !== "photo") {
+    const c = COLORS[activeColor];
+    document.querySelectorAll(".garment-fill").forEach(el => {
+      el.setAttribute("fill", c.fill);
+      el.setAttribute("stroke", c.dark);
+    });
+    document.querySelectorAll(".garment-stroke").forEach(el =>
+      el.setAttribute("stroke", c.dark));
+    document.querySelectorAll(".garment-dark").forEach(el =>
+      el.setAttribute("fill", c.dark));
+  }
 
   /* Editor panel state */
   if (selected >= 0) {
@@ -554,22 +798,35 @@ function attachCanvasEvents() {
   svg.addEventListener("pointercancel", end);
 }
 
+/* Garment layer: real product photo or placeholder SVG drawing */
+function garmentLayer(g) {
+  if (g.type === "photo") {
+    return `<image href="${ssImg(g.colors[activeColor].id, activeSide, "fm")}"
+             x="0" y="0" width="300" height="300" preserveAspectRatio="xMidYMid meet"/>`;
+  }
+  return g[activeSide];
+}
+
 /* Re-render only the SVG contents during drag (keeps pointer capture alive) */
 function softRender() {
   const svg = document.getElementById("canvas");
-  const g = GARMENTS[activeGarment];
-  const c = COLORS[activeColor];
+  const g = G();
   svg.innerHTML =
     `<rect width="300" height="300" fill="transparent"/>
-     <g class="garment">${g[activeSide]}</g>
+     <g class="garment">${garmentLayer(g)}</g>
      ${cur().map(itemMarkup).join("")}`;
-  svg.querySelectorAll(".garment-fill").forEach(el => {
-    el.setAttribute("fill", c.fill); el.setAttribute("stroke", c.dark);
-  });
-  svg.querySelectorAll(".garment-stroke").forEach(el => el.setAttribute("stroke", c.dark));
-  svg.querySelectorAll(".garment-dark").forEach(el => el.setAttribute("fill", c.dark));
+  if (g.type !== "photo") {
+    const c = COLORS[activeColor];
+    svg.querySelectorAll(".garment-fill").forEach(el => {
+      el.setAttribute("fill", c.fill); el.setAttribute("stroke", c.dark);
+    });
+    svg.querySelectorAll(".garment-stroke").forEach(el => el.setAttribute("stroke", c.dark));
+    svg.querySelectorAll(".garment-dark").forEach(el => el.setAttribute("fill", c.dark));
+  }
 }
 
+buildStylePicker();
+buildColorPicker();
 render();
 </script>
 </body>
