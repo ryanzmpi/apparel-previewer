@@ -520,30 +520,112 @@ const CATEGORIES = [
   name: "Sweatshirts",
   styles: [
   {
-    name: "Classic Hoodie",
-    desc: "Fleece pullover hoodie",
-    front: `
-      <path d="M92 62 L54 82 L26 150 L58 168 L70 146 L70 252
-               Q150 266 230 252 L230 146 L242 168 L274 150 L246 82 L208 62
-               Q182 84 150 84 Q118 84 92 62 Z"
-            fill="#3b4a63" stroke="#2a3550" stroke-width="3" class="garment-fill"/>
-      <path d="M92 62 Q108 34 150 34 Q192 34 208 62 Q196 86 150 88 Q104 86 92 62 Z"
-            fill="#3b4a63" stroke="#2a3550" stroke-width="3" class="garment-fill"/>
-      <path d="M110 62 Q124 46 150 46 Q176 46 190 62 Q176 76 150 77 Q124 76 110 62 Z"
-            fill="rgba(0,0,0,.25)"/>
-      <path d="M110 210 L190 210 L182 250 L118 250 Z"
-            fill="rgba(0,0,0,.12)" stroke="#2a3550" stroke-width="2" class="garment-stroke"/>
-      <line x1="140" y1="86" x2="138" y2="112" stroke="#e8e8e8" stroke-width="4" stroke-linecap="round"/>
-      <line x1="160" y1="86" x2="162" y2="112" stroke="#e8e8e8" stroke-width="4" stroke-linecap="round"/>`,
-    back: `
-      <path d="M92 62 L54 82 L26 150 L58 168 L70 146 L70 252
-               Q150 266 230 252 L230 146 L242 168 L274 150 L246 82 L208 62
-               Q182 84 150 84 Q118 84 92 62 Z"
-            fill="#3b4a63" stroke="#2a3550" stroke-width="3" class="garment-fill"/>
-      <path d="M104 66 Q104 32 150 32 Q196 32 196 66 L192 108 Q150 120 108 108 Z"
-            fill="#3b4a63" stroke="#2a3550" stroke-width="3" class="garment-fill"/>
-      <path d="M104 66 Q104 32 150 32 Q196 32 196 66 L192 108 Q150 120 108 108 Z"
-            fill="rgba(0,0,0,.14)"/>`
+    name: "Heavy Blend Hoodie",
+    desc: "Gildan 18500 · Heavy Blend™ · 8.0 oz 50/50 hooded sweatshirt",
+    type: "photo",
+    colors: [
+      { name: "White", id: "19750" },
+      { name: "Black", id: "19728" },
+      { name: "Antique Cherry Red", id: "33306" },
+      { name: "Antique Sapphire", id: "33305" },
+      { name: "Ash", id: "19727" },
+      { name: "Azalea", id: "78809" },
+      { name: "Cardinal Red", id: "37337" },
+      { name: "Carolina Blue", id: "30057" },
+      { name: "Charcoal", id: "33308" },
+      { name: "Cherry Red", id: "19730" },
+      { name: "Dark Chocolate", id: "30058" },
+      { name: "Dark Heather", id: "30711" },
+      { name: "Fan Charcoal Heather", id: "107688" },
+      { name: "Fan Dark Green", id: "107684" },
+      { name: "Fan Deep Royal", id: "107686" },
+      { name: "Forest", id: "30060" },
+      { name: "Garnet", id: "38855" },
+      { name: "Gold", id: "30061" },
+      { name: "Graphite Heather", id: "52333" },
+      { name: "Heather Dark Green", id: "66747" },
+      { name: "Heather Dark Maroon", id: "66740" },
+      { name: "Heather Dark Navy", id: "66745" },
+      { name: "Heather Deep Royal", id: "66742" },
+      { name: "Heather Scarlet Red", id: "66737" },
+      { name: "Heliconia", id: "30062" },
+      { name: "Indigo Blue", id: "30063" },
+      { name: "Irish Green", id: "30064" },
+      { name: "Light Blue", id: "30065" },
+      { name: "Light Pink", id: "30066" },
+      { name: "Maroon", id: "30067" },
+      { name: "Military Green", id: "33304" },
+      { name: "Mint Green", id: "78818" },
+      { name: "Navy", id: "19741" },
+      { name: "Neon Blue", id: "107687" },
+      { name: "Old Gold", id: "78820" },
+      { name: "Orange", id: "30068" },
+      { name: "Orchid", id: "78821" },
+      { name: "Purple", id: "19744" },
+      { name: "Red", id: "27674" },
+      { name: "Royal", id: "30069" },
+      { name: "Safety Green", id: "38856" },
+      { name: "Safety Orange", id: "38857" },
+      { name: "Safety Pink", id: "41715" },
+      { name: "Sand", id: "19746" },
+      { name: "Sapphire", id: "46135" },
+      { name: "Sport Grey", id: "19747" },
+      { name: "Violet", id: "19749" }
+    ]
+  },
+  {
+    name: "Heavyweight Hoodie",
+    desc: "Independent Trading Co. IND4000 · 10 oz heavyweight hooded sweatshirt",
+    type: "photo",
+    colors: [
+      { name: "White", id: "19817" },
+      { name: "Black", id: "19810" },
+      { name: "Alpine Green", id: "52966" },
+      { name: "Army", id: "27693" },
+      { name: "Army Camo", id: "41744" },
+      { name: "Ash Heather", id: "140801" },
+      { name: "Asphalt", id: "113961" },
+      { name: "Black Camo", id: "79655" },
+      { name: "Blue Aqua", id: "76730" },
+      { name: "Bone", id: "83636" },
+      { name: "Brown", id: "102994" },
+      { name: "Cement", id: "106389" },
+      { name: "Charcoal", id: "52964" },
+      { name: "Charcoal Heather", id: "19811" },
+      { name: "Charcoal Heather/Black", id: "64735" },
+      { name: "Dark Green", id: "29198" },
+      { name: "Darkwood Tree Camo", id: "140477" },
+      { name: "Deadwood Tree Camo", id: "135140" },
+      { name: "Duck Camo", id: "100669" },
+      { name: "Dusty Pink", id: "105702" },
+      { name: "Dusty Sage", id: "106390" },
+      { name: "Forest Camo", id: "69869" },
+      { name: "Gold", id: "83640" },
+      { name: "Grey Heather", id: "19812" },
+      { name: "Grey Heather/Black", id: "64736" },
+      { name: "Gunmetal Heather", id: "31167" },
+      { name: "Houndstooth", id: "99356" },
+      { name: "Lavender", id: "76734" },
+      { name: "Light Pink", id: "67644" },
+      { name: "Light Yellow", id: "76735" },
+      { name: "Maroon", id: "29197" },
+      { name: "Mint", id: "67559" },
+      { name: "Navy", id: "104927" },
+      { name: "Peach", id: "76731" },
+      { name: "Plum", id: "106391" },
+      { name: "Realtree APX Camo", id: "142606" },
+      { name: "Red", id: "19815" },
+      { name: "Royal", id: "19816" },
+      { name: "Saddle", id: "67643" },
+      { name: "Safety Orange", id: "83638" },
+      { name: "Safety Yellow", id: "83639" },
+      { name: "Sandstone", id: "52968" },
+      { name: "Slate Blue", id: "52970" },
+      { name: "Smoke", id: "106393" },
+      { name: "Snow Camo", id: "41745" },
+      { name: "Storm Blue", id: "106392" },
+      { name: "Tiger Camo", id: "76802" }
+    ]
   }
   ]
   },
@@ -551,28 +633,121 @@ const CATEGORIES = [
   name: "Hats",
   styles: [
   {
-    name: "Snapback",
-    desc: "Structured snapback",
-    front: `
-      <path d="M62 158 Q62 74 150 74 Q238 74 238 158 L238 172 L62 172 Z"
-            fill="#3b4a63" stroke="#2a3550" stroke-width="3" class="garment-fill"/>
-      <path d="M150 74 L150 172 M105 82 Q96 120 96 172 M195 82 Q204 120 204 172"
-            fill="none" stroke="rgba(0,0,0,.25)" stroke-width="2"/>
-      <circle cx="150" cy="74" r="6" class="garment-dark" fill="#2a3550"/>
-      <path d="M62 165 Q150 148 238 165 L244 186 Q150 166 56 186 Z"
-            fill="#2a3550" class="garment-dark"/>`,
-    back: `
-      <path d="M62 158 Q62 74 150 74 Q238 74 238 158 L238 178 L62 178 Z"
-            fill="#3b4a63" stroke="#2a3550" stroke-width="3" class="garment-fill"/>
-      <path d="M150 74 L150 178 M105 82 Q96 120 96 178 M195 82 Q204 120 204 178"
-            fill="none" stroke="rgba(0,0,0,.25)" stroke-width="2"/>
-      <circle cx="150" cy="74" r="6" class="garment-dark" fill="#2a3550"/>
-      <!-- snapback vent + strap -->
-      <path d="M128 178 Q150 146 172 178 Z" fill="#fff" stroke="rgba(0,0,0,.3)" stroke-width="2"/>
-      <rect x="130" y="155" width="40" height="11" rx="3" class="garment-dark" fill="#2a3550"/>
-      <circle cx="138" cy="160.5" r="2" fill="rgba(255,255,255,.5)"/>
-      <circle cx="150" cy="160.5" r="2" fill="rgba(255,255,255,.5)"/>
-      <circle cx="162" cy="160.5" r="2" fill="rgba(255,255,255,.5)"/>`
+    name: "Cotton Blend Cap",
+    desc: "Flexfit 6277 · Cotton Blend Cap · fitted, structured six-panel",
+    type: "photo",
+    colors: [
+      { name: "White", id: "27765" },
+      { name: "Black", id: "20234" },
+      { name: "Brown", id: "20235" },
+      { name: "Carolina Blue", id: "20236" },
+      { name: "Coyote Brown", id: "81970" },
+      { name: "Dark Grey", id: "20237" },
+      { name: "Dark Navy", id: "20238" },
+      { name: "Grey", id: "20241" },
+      { name: "Khaki", id: "20242" },
+      { name: "Kryptek Highlander", id: "90089" },
+      { name: "Kryptek Typhon", id: "90088" },
+      { name: "Maroon", id: "20244" },
+      { name: "Multicam Alpine", id: "83021" },
+      { name: "Multicam Arid", id: "83022" },
+      { name: "Multicam Black", id: "71050" },
+      { name: "Multicam Green", id: "71049" },
+      { name: "Multicam Tropic", id: "83023" },
+      { name: "Navy", id: "20245" },
+      { name: "Obskura Nox", id: "141258" },
+      { name: "Olive", id: "20246" },
+      { name: "Orange", id: "20247" },
+      { name: "Pepper Green", id: "71043" },
+      { name: "Poseidon Black", id: "95367" },
+      { name: "Purple", id: "20248" },
+      { name: "Red", id: "20249" },
+      { name: "Royal Blue", id: "20250" },
+      { name: "Silver", id: "71044" },
+      { name: "Spruce", id: "20252" }
+    ]
+  },
+  {
+    name: "Trucker Cap",
+    desc: "Flexfit 6511 · Trucker Cap · structured mesh-back",
+    type: "photo",
+    colors: [
+      { name: "White", id: "29533" },
+      { name: "Black", id: "29524" },
+      { name: "Black/White", id: "29525" },
+      { name: "Black/White/Black", id: "29536" },
+      { name: "Brown", id: "29526" },
+      { name: "Brown/Khaki", id: "62905" },
+      { name: "Caramel", id: "84661" },
+      { name: "Caramel/Black", id: "84659" },
+      { name: "Charcoal", id: "62904" },
+      { name: "Charcoal/Black", id: "84665" },
+      { name: "Charcoal/Navy", id: "84666" },
+      { name: "Charcoal/Neon Orange", id: "84663" },
+      { name: "Charcoal/Neon Yellow", id: "84664" },
+      { name: "Charcoal/White", id: "62907" },
+      { name: "Dark Navy", id: "29527" },
+      { name: "Navy", id: "29534" },
+      { name: "Navy/Graphite", id: "84667" },
+      { name: "Navy/White", id: "29528" },
+      { name: "Navy/White/Navy", id: "29535" },
+      { name: "Red", id: "29530" },
+      { name: "Red/Black", id: "62908" },
+      { name: "Royal", id: "29532" },
+      { name: "Royal/White", id: "70797" }
+    ]
+  },
+  {
+    name: "V-Flexfit Twill",
+    desc: "Flexfit 5001 · V-Flexfit® Cotton Twill Cap · fitted",
+    type: "photo",
+    colors: [
+      { name: "White", id: "27754" },
+      { name: "Black", id: "20148" },
+      { name: "Dark Grey", id: "90085" },
+      { name: "Grey", id: "20149" },
+      { name: "Khaki", id: "20150" },
+      { name: "Navy", id: "20151" },
+      { name: "Red", id: "20152" },
+      { name: "Royal Blue", id: "20153" }
+    ]
+  },
+  {
+    name: "110 Mesh-Back",
+    desc: "Flexfit 110M · 110® Mesh-Back Cap · adjustable snapback",
+    type: "photo",
+    colors: [
+      { name: "White", id: "82123" },
+      { name: "Black", id: "82114" },
+      { name: "Black/White/White", id: "141280" },
+      { name: "Black/White", id: "82115" },
+      { name: "Brown/Khaki", id: "105144" },
+      { name: "Caramel", id: "129854" },
+      { name: "Caramel/Khaki", id: "105147" },
+      { name: "Charcoal", id: "82116" },
+      { name: "Charcoal/Black", id: "105148" },
+      { name: "Charcoal/White", id: "82117" },
+      { name: "Coyote Brown/Black", id: "105145" },
+      { name: "Coyote Brown/Khaki", id: "105146" },
+      { name: "Dark Heather Grey", id: "129856" },
+      { name: "Dark Heather/White/White", id: "141281" },
+      { name: "Heather Grey/Black", id: "105149" },
+      { name: "Heather Grey/White", id: "105150" },
+      { name: "Khaki", id: "129857" },
+      { name: "Melange Charcoal/Black", id: "84676" },
+      { name: "Melange Silver/White", id: "84677" },
+      { name: "Navy", id: "82118" },
+      { name: "Navy/White", id: "82119" },
+      { name: "Navy/White/White", id: "141282" },
+      { name: "Olive/Khaki", id: "105151" },
+      { name: "Realtree Edge/Brown", id: "129861" },
+      { name: "Realtree Max7/Brown", id: "129862" },
+      { name: "Realtree Original/Black", id: "141277" },
+      { name: "Red", id: "82120" },
+      { name: "Red/White", id: "82121" },
+      { name: "Royal/White", id: "82122" },
+      { name: "Silver", id: "129860" }
+    ]
   }
   ]
   }
