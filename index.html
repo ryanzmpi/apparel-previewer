@@ -171,6 +171,17 @@
   .preview-card h3 { font-size: 1.15rem; margin-top: 10px; }
   .preview-card p { color: var(--muted); font-size: .85rem; margin-top: 3px; }
   .canvas-hint { font-size: .75rem; color: var(--muted); margin-top: 8px; }
+  .preview-actions {
+    display: flex; gap: 10px; justify-content: center;
+    flex-wrap: wrap; margin-top: 14px;
+  }
+  .action-btn {
+    padding: 8px 18px; font-size: .85rem; font-weight: 600;
+    background: none; border: 1.5px solid var(--accent); color: var(--accent);
+    border-radius: 8px; cursor: pointer;
+  }
+  .action-btn:hover { background: var(--accent); color: #fff; }
+  .action-btn:disabled { opacity: .6; cursor: default; }
 
   .item-group { cursor: grab; }
   .item-group.dragging { cursor: grabbing; }
@@ -300,6 +311,10 @@
       <h3 id="previewName"></h3>
       <p id="previewDesc"></p>
       <div class="canvas-hint">Click an item to select it &middot; drag to move &middot; drag the corner handle to resize.</div>
+      <div class="preview-actions">
+        <button class="action-btn" id="downloadBtn">Download image</button>
+        <button class="action-btn" id="copyLinkBtn">Copy link</button>
+      </div>
     </div>
   </main>
 </div>
@@ -1305,6 +1320,87 @@ if (new URLSearchParams(location.search).get("sent") === "1") {
   status.textContent = "Sent! We'll be in touch soon.";
   history.replaceState(null, "", location.pathname);
 }
+
+/* =========================================================
+   DOWNLOAD IMAGE + COPY LINK
+   ========================================================= */
+const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+document.getElementById("downloadBtn").addEventListener("click", async e => {
+  const btn = e.target;
+  btn.disabled = true;
+  const old = btn.textContent;
+  btn.textContent = "Preparing…";
+  try {
+    const snap = await snapshot(activeSide);
+    const g = G();
+    const colorList = g.type === "photo" ? g.colors : COLORS;
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(snap.blob);
+    a.download = `marathon-${slug(g.name)}-${slug(colorList[activeColor].name)}-${activeSide}.${snap.ext}`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  } finally {
+    btn.textContent = old;
+    btn.disabled = false;
+  }
+});
+
+document.getElementById("copyLinkBtn").addEventListener("click", async e => {
+  const btn = e.target;
+  const g = G();
+  const colorList = g.type === "photo" ? g.colors : COLORS;
+  const params = new URLSearchParams({
+    g: CATEGORIES[activeCategory].name,
+    s: g.name,
+    c: colorList[activeColor].name,
+    side: activeSide
+  });
+  /* Text items travel in the link; uploaded images are too large to include */
+  const texts = {
+    front: items.front.filter(it => it.type === "text"),
+    back: items.back.filter(it => it.type === "text")
+  };
+  if (texts.front.length || texts.back.length) {
+    params.set("t", btoa(unescape(encodeURIComponent(JSON.stringify(texts)))));
+  }
+  const url = location.origin + location.pathname + "?" + params.toString();
+  try {
+    await navigator.clipboard.writeText(url);
+    const old = btn.textContent;
+    btn.textContent = "Link copied!";
+    setTimeout(() => { btn.textContent = old; }, 2000);
+  } catch (err) {
+    window.prompt("Copy this link:", url);
+  }
+});
+
+/* Restore selections when opening a shared link */
+(function restoreFromLink() {
+  const p = new URLSearchParams(location.search);
+  if (!p.get("g") && !p.get("s")) return;
+  const norm = x => (x || "").toLowerCase();
+  const ci = CATEGORIES.findIndex(c => norm(c.name) === norm(p.get("g")));
+  if (ci >= 0) activeCategory = ci;
+  const si = CATEGORIES[activeCategory].styles.findIndex(s => norm(s.name) === norm(p.get("s")));
+  if (si >= 0) activeStyle = si;
+  const g = G();
+  const list = g.type === "photo" ? g.colors : COLORS;
+  const coli = list.findIndex(c => norm(c.name) === norm(p.get("c")));
+  if (coli >= 0) activeColor = coli;
+  if (p.get("side") === "back") activeSide = "back";
+  if (p.get("t")) {
+    try {
+      const texts = JSON.parse(decodeURIComponent(escape(atob(p.get("t")))));
+      for (const side of ["front", "back"]) {
+        if (Array.isArray(texts[side])) {
+          items[side] = texts[side].filter(it => it && it.type === "text"
+            && typeof it.text === "string" && it.text.length <= 100);
+        }
+      }
+    } catch (err) { /* malformed link — ignore */ }
+  }
+})();
 
 buildStylePicker();
 buildColorPicker();
