@@ -344,7 +344,7 @@ const CATEGORIES = [
   {
     name: "Heavy Cotton",
     desc: "Gildan 5000 · Heavy Cotton™ · 5.3 oz 100% cotton",
-    price: 6.22,
+    price: 2.82,
     type: "photo",
     colors: [
       { name: "White", id: "16813" },
@@ -435,7 +435,7 @@ const CATEGORIES = [
   {
     name: "Ultra Cotton",
     desc: "Gildan 2000 · Ultra Cotton™ · 6.0 oz 100% cotton",
-    price: 6.90,
+    price: 3.21,
     type: "photo",
     colors: [
       { name: "White", id: "17130" },
@@ -504,7 +504,7 @@ const CATEGORIES = [
   {
     name: "Softstyle CVC",
     desc: "Gildan 64000CVC · 60/40 ring-spun cotton/poly · XS–4XL",
-    price: 7.50,
+    price: 3.86,
     type: "photo",
     colors: [
       { name: "White",              id: "87976" },
@@ -537,7 +537,7 @@ const CATEGORIES = [
   {
     name: "Ultra Cotton Pocket",
     desc: "Gildan 2300 · Ultra Cotton® Pocket Tee · 6.0 oz 100% US cotton",
-    price: 12.42,
+    price: 5.22,
     type: "photo",
     colors: [
       { name: "White", id: "30012" },
@@ -560,7 +560,7 @@ const CATEGORIES = [
   {
     name: "Hammer Maxweight",
     desc: "Gildan 75000 · Hammer™ Maxweight · 7 oz 100% ring-spun cotton",
-    price: 9.62,
+    price: 4.94,
     type: "photo",
     colors: [
       { name: "White", id: "114284" },
@@ -584,7 +584,7 @@ const CATEGORIES = [
   {
     name: "Heavy Blend Hoodie",
     desc: "Gildan 18500 · Heavy Blend™ · 8.0 oz 50/50 hooded sweatshirt",
-    price: 25.52,
+    price: 13.14,
     type: "photo",
     colors: [
       { name: "White", id: "19750" },
@@ -639,7 +639,7 @@ const CATEGORIES = [
   {
     name: "Heavyweight Hoodie",
     desc: "Independent Trading Co. IND4000 · 10 oz heavyweight hooded sweatshirt",
-    price: 39.02,
+    price: 20.09,
     type: "photo",
     colors: [
       { name: "White", id: "19817" },
@@ -699,7 +699,7 @@ const CATEGORIES = [
   {
     name: "Cotton Blend Cap",
     desc: "Flexfit 6277 · Cotton Blend Cap · fitted, structured six-panel",
-    price: 16.30,
+    price: 8.39,
     type: "photo",
     colors: [
       { name: "White", id: "27765" },
@@ -735,7 +735,7 @@ const CATEGORIES = [
   {
     name: "Trucker Cap",
     desc: "Flexfit 6511 · Trucker Cap · structured mesh-back",
-    price: 13.80,
+    price: 7.11,
     type: "photo",
     colors: [
       { name: "White", id: "29533" },
@@ -766,7 +766,7 @@ const CATEGORIES = [
   {
     name: "V-Flexfit Twill",
     desc: "Flexfit 5001 · V-Flexfit® Cotton Twill Cap · fitted",
-    price: 15.00,
+    price: 7.72,
     type: "photo",
     colors: [
       { name: "White", id: "27754" },
@@ -782,7 +782,7 @@ const CATEGORIES = [
   {
     name: "110 Mesh-Back",
     desc: "Flexfit 110M · 110® Mesh-Back Cap · adjustable snapback",
-    price: 14.30,
+    price: 7.36,
     type: "photo",
     colors: [
       { name: "White", id: "82123" },
@@ -1164,8 +1164,8 @@ function softRender() {
    ========================================================= */
 const SALES_EMAIL = "sales@marathononline.com";
 
-/* Customer-facing price: 2x the S&S list price */
-const displayPrice = g => g.price ? "Starting at $" + (g.price * 2).toFixed(2) : "";
+/* Customer-facing price: 1.5x Marathon's wholesale price */
+const displayPrice = g => g.price ? "Starting at $" + (g.price * 1.5).toFixed(2) : "";
 
 /* Item markup without selection chrome, for export */
 function itemExport(it) {
