@@ -342,6 +342,7 @@ const CATEGORIES = [
   {
     name: "Heavy Cotton",
     desc: "Gildan 5000 · Heavy Cotton™ · 5.3 oz 100% cotton",
+    price: 6.22,
     type: "photo",
     colors: [
       { name: "White", id: "16813" },
@@ -432,6 +433,7 @@ const CATEGORIES = [
   {
     name: "Ultra Cotton",
     desc: "Gildan 2000 · Ultra Cotton™ · 6.0 oz 100% cotton",
+    price: 6.90,
     type: "photo",
     colors: [
       { name: "White", id: "17130" },
@@ -500,6 +502,7 @@ const CATEGORIES = [
   {
     name: "Softstyle CVC",
     desc: "Gildan 64000CVC · 60/40 ring-spun cotton/poly · XS–4XL",
+    price: 7.50,
     type: "photo",
     colors: [
       { name: "White",              id: "87976" },
@@ -532,6 +535,7 @@ const CATEGORIES = [
   {
     name: "Ultra Cotton Pocket",
     desc: "Gildan 2300 · Ultra Cotton® Pocket Tee · 6.0 oz 100% US cotton",
+    price: 12.42,
     type: "photo",
     colors: [
       { name: "White", id: "30012" },
@@ -554,6 +558,7 @@ const CATEGORIES = [
   {
     name: "Hammer Maxweight",
     desc: "Gildan 75000 · Hammer™ Maxweight · 7 oz 100% ring-spun cotton",
+    price: 9.62,
     type: "photo",
     colors: [
       { name: "White", id: "114284" },
@@ -577,6 +582,7 @@ const CATEGORIES = [
   {
     name: "Heavy Blend Hoodie",
     desc: "Gildan 18500 · Heavy Blend™ · 8.0 oz 50/50 hooded sweatshirt",
+    price: 25.52,
     type: "photo",
     colors: [
       { name: "White", id: "19750" },
@@ -631,6 +637,7 @@ const CATEGORIES = [
   {
     name: "Heavyweight Hoodie",
     desc: "Independent Trading Co. IND4000 · 10 oz heavyweight hooded sweatshirt",
+    price: 39.02,
     type: "photo",
     colors: [
       { name: "White", id: "19817" },
@@ -690,6 +697,7 @@ const CATEGORIES = [
   {
     name: "Cotton Blend Cap",
     desc: "Flexfit 6277 · Cotton Blend Cap · fitted, structured six-panel",
+    price: 16.30,
     type: "photo",
     colors: [
       { name: "White", id: "27765" },
@@ -725,6 +733,7 @@ const CATEGORIES = [
   {
     name: "Trucker Cap",
     desc: "Flexfit 6511 · Trucker Cap · structured mesh-back",
+    price: 13.80,
     type: "photo",
     colors: [
       { name: "White", id: "29533" },
@@ -755,6 +764,7 @@ const CATEGORIES = [
   {
     name: "V-Flexfit Twill",
     desc: "Flexfit 5001 · V-Flexfit® Cotton Twill Cap · fitted",
+    price: 15.00,
     type: "photo",
     colors: [
       { name: "White", id: "27754" },
@@ -770,6 +780,7 @@ const CATEGORIES = [
   {
     name: "110 Mesh-Back",
     desc: "Flexfit 110M · 110® Mesh-Back Cap · adjustable snapback",
+    price: 14.30,
     type: "photo",
     colors: [
       { name: "White", id: "82123" },
@@ -818,6 +829,10 @@ const COLORS = [
 ];
 
 const TEXT_COLORS = ["#ffffff", "#1e2430", "#ffd166", "#d64545", "#7fd1e8"];
+
+/* Sort styles within each category from least to most expensive */
+CATEGORIES.forEach(cat =>
+  cat.styles.sort((a, b) => (a.price || 0) - (b.price || 0)));
 
 let activeCategory = 0;
 let activeStyle = 0;
@@ -1167,9 +1182,19 @@ function composeSVG(side, garmentHref) {
   } else {
     layer = g[side];
   }
-  let str = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="900" height="900">` +
-            `<rect width="300" height="300" fill="#ffffff"/>${layer}` +
-            items[side].map(itemExport).join("") + `</svg>`;
+  /* Caption: style, color, and description under the garment */
+  const colorList = g.type === "photo" ? g.colors : COLORS;
+  const colorName = colorList[activeColor].name;
+  const sideLabel = side.charAt(0).toUpperCase() + side.slice(1);
+  const caption =
+    `<line x1="12" y1="302" x2="288" y2="302" stroke="#d6dae2" stroke-width="1"/>` +
+    `<text x="150" y="316" text-anchor="middle" font-family="Arial, sans-serif"
+       font-size="10.5" font-weight="bold" fill="#1e2430">${escapeHtml(g.name + " — " + colorName + " (" + sideLabel + ")")}</text>` +
+    `<text x="150" y="330" text-anchor="middle" font-family="Arial, sans-serif"
+       font-size="8" fill="#6b7280">${escapeHtml(g.desc)}</text>`;
+  let str = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 340" width="900" height="1020">` +
+            `<rect width="300" height="340" fill="#ffffff"/>${layer}` +
+            items[side].map(itemExport).join("") + caption + `</svg>`;
   if (g.type !== "photo") {
     const doc = new DOMParser().parseFromString(str, "image/svg+xml");
     const c = COLORS[activeColor];
@@ -1197,9 +1222,10 @@ function svgToPng(svgStr, size) {
     img.onload = () => {
       try {
         const cv = document.createElement("canvas");
-        cv.width = size; cv.height = size;
+        cv.width = size;
+        cv.height = Math.round(size * (img.height / img.width)) || size;
         const ctx = cv.getContext("2d");
-        ctx.drawImage(img, 0, 0, size, size);
+        ctx.drawImage(img, 0, 0, cv.width, cv.height);
         URL.revokeObjectURL(url);
         cv.toBlob(b => b ? res(b) : rej(new Error("toBlob")), "image/png");
       } catch (err) { URL.revokeObjectURL(url); rej(err); }
