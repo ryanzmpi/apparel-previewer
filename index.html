@@ -170,6 +170,7 @@
   }
   .preview-card h3 { font-size: 1.15rem; margin-top: 10px; }
   .preview-card p { color: var(--muted); font-size: .85rem; margin-top: 3px; }
+  #previewPrice { color: var(--accent); font-weight: 700; font-size: .95rem; margin-top: 5px; }
   .canvas-hint { font-size: .75rem; color: var(--muted); margin-top: 8px; }
   .preview-actions {
     display: flex; gap: 10px; justify-content: center;
@@ -310,6 +311,7 @@
       <div id="previewSvg"></div>
       <h3 id="previewName"></h3>
       <p id="previewDesc"></p>
+      <p id="previewPrice"></p>
       <div class="canvas-hint">Click an item to select it &middot; drag to move &middot; drag the corner handle to resize.</div>
       <div class="preview-actions">
         <button class="action-btn" id="downloadBtn">Download image</button>
@@ -1034,6 +1036,7 @@ function render() {
   document.getElementById("previewName").textContent =
     g.name + " — " + colorName + (activeSide === "back" ? " (Back)" : " (Front)");
   document.getElementById("previewDesc").textContent = g.desc;
+  document.getElementById("previewPrice").textContent = displayPrice(g);
 
   if (g.type !== "photo") {
     const c = COLORS[activeColor];
@@ -1161,6 +1164,9 @@ function softRender() {
    ========================================================= */
 const SALES_EMAIL = "sales@marathononline.com";
 
+/* Customer-facing price: 2x the S&S list price */
+const displayPrice = g => g.price ? "Starting at $" + (g.price * 2).toFixed(2) : "";
+
 /* Item markup without selection chrome, for export */
 function itemExport(it) {
   if (it.type === "image") {
@@ -1191,9 +1197,11 @@ function composeSVG(side, garmentHref) {
     `<text x="150" y="316" text-anchor="middle" font-family="Arial, sans-serif"
        font-size="10.5" font-weight="bold" fill="#1e2430">${escapeHtml(g.name + " — " + colorName + " (" + sideLabel + ")")}</text>` +
     `<text x="150" y="330" text-anchor="middle" font-family="Arial, sans-serif"
-       font-size="8" fill="#6b7280">${escapeHtml(g.desc)}</text>`;
-  let str = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 340" width="900" height="1020">` +
-            `<rect width="300" height="340" fill="#ffffff"/>${layer}` +
+       font-size="8" fill="#6b7280">${escapeHtml(g.desc)}</text>` +
+    `<text x="150" y="344" text-anchor="middle" font-family="Arial, sans-serif"
+       font-size="9.5" font-weight="bold" fill="#de5f3d">${escapeHtml(displayPrice(g))}</text>`;
+  let str = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 354" width="900" height="1062">` +
+            `<rect width="300" height="354" fill="#ffffff"/>${layer}` +
             items[side].map(itemExport).join("") + caption + `</svg>`;
   if (g.type !== "photo") {
     const doc = new DOMParser().parseFromString(str, "image/svg+xml");
@@ -1256,6 +1264,75 @@ async function snapshot(side) {
     return { blob: await svgToPng(svgStr, 900), ext: "png" };
   } catch (e) {
     return { blob: new Blob([composeSVG(side)], { type: "image/svg+xml" }), ext: "svg" };
+  }
+}
+
+/* Combined front + back sheet with caption, for the download button */
+function composeCombinedSVG(hrefF, hrefB) {
+  const g = G();
+  const hrefs = { front: hrefF, back: hrefB };
+  const panel = side => {
+    let layer;
+    if (g.type === "photo") {
+      const href = hrefs[side] || ssImg(g.colors[activeColor].id, side, "fl");
+      layer = `<image href="${href}" x="0" y="0" width="300" height="300" preserveAspectRatio="xMidYMid meet"/>`;
+    } else {
+      layer = g[side];
+    }
+    return `<g${side === "back" ? ' transform="translate(300,0)"' : ""}>${layer}${items[side].map(itemExport).join("")}</g>`;
+  };
+  const colorList = g.type === "photo" ? g.colors : COLORS;
+  const colorName = colorList[activeColor].name;
+  let str =
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 354" width="1200" height="708">` +
+    `<rect width="600" height="354" fill="#ffffff"/>` +
+    panel("front") + panel("back") +
+    `<line x1="300" y1="14" x2="300" y2="286" stroke="#e5e7eb" stroke-width="1"/>` +
+    `<text x="150" y="297" text-anchor="middle" font-family="Arial, sans-serif" font-size="8"
+       letter-spacing="1.5" fill="#9aa0aa">FRONT</text>` +
+    `<text x="450" y="297" text-anchor="middle" font-family="Arial, sans-serif" font-size="8"
+       letter-spacing="1.5" fill="#9aa0aa">BACK</text>` +
+    `<line x1="12" y1="304" x2="588" y2="304" stroke="#d6dae2" stroke-width="1"/>` +
+    `<text x="300" y="318" text-anchor="middle" font-family="Arial, sans-serif"
+       font-size="10.5" font-weight="bold" fill="#1e2430">${escapeHtml(g.name + " — " + colorName)}</text>` +
+    `<text x="300" y="331" text-anchor="middle" font-family="Arial, sans-serif"
+       font-size="8" fill="#6b7280">${escapeHtml(g.desc)}</text>` +
+    `<text x="300" y="345" text-anchor="middle" font-family="Arial, sans-serif"
+       font-size="9.5" font-weight="bold" fill="#de5f3d">${escapeHtml(displayPrice(g))}</text>` +
+    `</svg>`;
+  if (g.type !== "photo") {
+    const doc = new DOMParser().parseFromString(str, "image/svg+xml");
+    const c = COLORS[activeColor];
+    doc.querySelectorAll(".garment-fill").forEach(el => {
+      el.setAttribute("fill", c.fill); el.setAttribute("stroke", c.dark);
+    });
+    doc.querySelectorAll(".garment-stroke").forEach(el => el.setAttribute("stroke", c.dark));
+    doc.querySelectorAll(".garment-dark").forEach(el => el.setAttribute("fill", c.dark));
+    str = new XMLSerializer().serializeToString(doc.documentElement);
+  }
+  return str;
+}
+
+async function snapshotCombined() {
+  const g = G();
+  let hrefF = null, hrefB = null;
+  if (g.type === "photo") {
+    try {
+      const id = g.colors[activeColor].id;
+      [hrefF, hrefB] = await Promise.all(["front", "back"].map(async side => {
+        const resp = await fetch(ssImg(id, side, "fl"), { mode: "cors" });
+        if (!resp.ok) throw new Error("fetch");
+        return blobToDataURL(await resp.blob());
+      }));
+    } catch (e) {
+      return { blob: new Blob([composeCombinedSVG()], { type: "image/svg+xml" }), ext: "svg" };
+    }
+  }
+  const str = composeCombinedSVG(hrefF, hrefB);
+  try {
+    return { blob: await svgToPng(str, 1400), ext: "png" };
+  } catch (e) {
+    return { blob: new Blob([composeCombinedSVG()], { type: "image/svg+xml" }), ext: "svg" };
   }
 }
 
@@ -1358,12 +1435,12 @@ document.getElementById("downloadBtn").addEventListener("click", async e => {
   const old = btn.textContent;
   btn.textContent = "Preparing…";
   try {
-    const snap = await snapshot(activeSide);
+    const snap = await snapshotCombined();
     const g = G();
     const colorList = g.type === "photo" ? g.colors : COLORS;
     const a = document.createElement("a");
     a.href = URL.createObjectURL(snap.blob);
-    a.download = `marathon-${slug(g.name)}-${slug(colorList[activeColor].name)}-${activeSide}.${snap.ext}`;
+    a.download = `marathon-${slug(g.name)}-${slug(colorList[activeColor].name)}.${snap.ext}`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   } finally {
