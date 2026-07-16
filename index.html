@@ -171,6 +171,10 @@
   .preview-card h3 { font-size: 1.15rem; margin-top: 10px; }
   .preview-card p { color: var(--muted); font-size: .85rem; margin-top: 3px; }
   #previewPrice { color: var(--accent); font-weight: 700; font-size: .95rem; margin-top: 5px; }
+  #priceDisclaimer {
+    font-size: .72rem; font-style: italic; color: var(--muted);
+    max-width: 420px; margin: 4px auto 0;
+  }
   .canvas-hint { font-size: .75rem; color: var(--muted); margin-top: 8px; }
   .preview-actions {
     display: flex; gap: 10px; justify-content: center;
@@ -312,6 +316,8 @@
       <h3 id="previewName"></h3>
       <p id="previewDesc"></p>
       <p id="previewPrice"></p>
+      <p id="priceDisclaimer">Price is for the blank garment only and does not include printing.
+        Intended for rough estimating purposes only.</p>
       <div class="canvas-hint">Click an item to select it &middot; drag to move &middot; drag the corner handle to resize.</div>
       <div class="preview-actions">
         <button class="action-btn" id="downloadBtn">Download image</button>
@@ -1199,9 +1205,11 @@ function composeSVG(side, garmentHref) {
     `<text x="150" y="330" text-anchor="middle" font-family="Arial, sans-serif"
        font-size="8" fill="#6b7280">${escapeHtml(g.desc)}</text>` +
     `<text x="150" y="344" text-anchor="middle" font-family="Arial, sans-serif"
-       font-size="9.5" font-weight="bold" fill="#de5f3d">${escapeHtml(displayPrice(g))}</text>`;
-  let str = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 354" width="900" height="1062">` +
-            `<rect width="300" height="354" fill="#ffffff"/>${layer}` +
+       font-size="9.5" font-weight="bold" fill="#de5f3d">${escapeHtml(displayPrice(g))}</text>` +
+    `<text x="150" y="355" text-anchor="middle" font-family="Arial, sans-serif"
+       font-size="6" font-style="italic" fill="#9aa0aa">Price is for the blank garment only, does not include printing, and is for rough estimating purposes only.</text>`;
+  let str = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 364" width="900" height="1092">` +
+            `<rect width="300" height="364" fill="#ffffff"/>${layer}` +
             items[side].map(itemExport).join("") + caption + `</svg>`;
   if (g.type !== "photo") {
     const doc = new DOMParser().parseFromString(str, "image/svg+xml");
@@ -1284,8 +1292,8 @@ function composeCombinedSVG(hrefF, hrefB) {
   const colorList = g.type === "photo" ? g.colors : COLORS;
   const colorName = colorList[activeColor].name;
   let str =
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 354" width="1200" height="708">` +
-    `<rect width="600" height="354" fill="#ffffff"/>` +
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 364" width="1200" height="728">` +
+    `<rect width="600" height="364" fill="#ffffff"/>` +
     panel("front") + panel("back") +
     `<line x1="300" y1="14" x2="300" y2="286" stroke="#e5e7eb" stroke-width="1"/>` +
     `<text x="150" y="297" text-anchor="middle" font-family="Arial, sans-serif" font-size="8"
@@ -1299,6 +1307,8 @@ function composeCombinedSVG(hrefF, hrefB) {
        font-size="8" fill="#6b7280">${escapeHtml(g.desc)}</text>` +
     `<text x="300" y="345" text-anchor="middle" font-family="Arial, sans-serif"
        font-size="9.5" font-weight="bold" fill="#de5f3d">${escapeHtml(displayPrice(g))}</text>` +
+    `<text x="300" y="357" text-anchor="middle" font-family="Arial, sans-serif"
+       font-size="6.5" font-style="italic" fill="#9aa0aa">Price is for the blank garment only, does not include printing, and is for rough estimating purposes only.</text>` +
     `</svg>`;
   if (g.type !== "photo") {
     const doc = new DOMParser().parseFromString(str, "image/svg+xml");
