@@ -1541,18 +1541,30 @@ document.getElementById("getPriceBtn").addEventListener("click", async e => {
       })
     });
     const j = await resp.json();
-    if (j.success) {
+    if (!j.success || !j.quoteId) throw new Error(j.detail || "quote failed");
+
+    /* Poll for pricing: every 4s, up to 3 minutes */
+    let priced = null;
+    for (let i = 0; i < 45; i++) {
+      await new Promise(r => setTimeout(r, 4000));
+      result.textContent = `Quote ${j.quoteNumber} created — calculating your price… (${(i + 1) * 4}s)`;
+      try {
+        const s = await fetch(`${QUOTE_API}/status/${j.quoteId}?quantity=${qty}`);
+        const sj = await s.json();
+        if (sj.priced) { priced = sj; break; }
+      } catch (e) { /* transient network error — keep polling */ }
+    }
+
+    if (priced) {
       result.className = "ok";
       result.textContent =
-        `Quote ${j.quoteNumber}: $${j.totalPrice.toFixed(2)} total` +
-        ` ($${j.unitPrice.toFixed(2)} each, ${locations.length ? "printed" : "blank"})`;
-    } else if (j.pending) {
+        `Quote ${j.quoteNumber}: $${priced.totalPrice.toFixed(2)} total` +
+        ` ($${priced.unitPrice.toFixed(2)} each, ${locations.length ? "printed" : "blank"})`;
+    } else {
       result.className = "";
       result.textContent =
         `Quote ${j.quoteNumber} was created but pricing is taking longer than usual — ` +
         `send your design below and we'll follow up with the full price.`;
-    } else {
-      throw new Error(j.detail || "quote failed");
     }
   } catch (err) {
     result.className = "err";
