@@ -175,6 +175,19 @@
     font-size: .72rem; font-style: italic; color: var(--muted);
     max-width: 420px; margin: 4px auto 0;
   }
+  .full-price-row {
+    display: flex; gap: 10px; justify-content: center;
+    align-items: center; margin-top: 14px; flex-wrap: wrap;
+  }
+  .full-price-row input {
+    width: 110px; padding: 8px 10px; font-size: .9rem;
+    border: 1.5px solid #d6dae2; border-radius: 8px;
+  }
+  #fullPriceResult {
+    margin-top: 10px; font-size: .95rem; min-height: 1.3em;
+  }
+  #fullPriceResult.ok { color: #2e7d43; font-weight: 700; }
+  #fullPriceResult.err { color: var(--danger); font-size: .82rem; }
   .canvas-hint { font-size: .75rem; color: var(--muted); margin-top: 8px; }
   .preview-actions {
     display: flex; gap: 10px; justify-content: center;
@@ -318,6 +331,11 @@
       <p id="previewPrice"></p>
       <p id="priceDisclaimer">Price is for the blank garment only and does not include printing.
         Intended for rough estimating purposes only.</p>
+      <div class="full-price-row">
+        <input type="number" id="qtyInput" min="1" max="100000" placeholder="Quantity">
+        <button class="action-btn" id="getPriceBtn">Get full printed price</button>
+      </div>
+      <div id="fullPriceResult"></div>
       <div class="canvas-hint">Click an item to select it &middot; drag to move &middot; drag the corner handle to resize.</div>
       <div class="preview-actions">
         <button class="action-btn" id="downloadBtn">Download image</button>
@@ -1485,6 +1503,63 @@ document.getElementById("copyLinkBtn").addEventListener("click", async e => {
     setTimeout(() => { btn.textContent = old; }, 2000);
   } catch (err) {
     window.prompt("Copy this link:", url);
+  }
+});
+
+/* =========================================================
+   LIVE FULL-PRICE QUOTE via Marathon's dashboard server
+   ========================================================= */
+const QUOTE_API = "https://dashboard.marathononline.com/api/quote";
+
+document.getElementById("getPriceBtn").addEventListener("click", async e => {
+  const btn = e.target;
+  const result = document.getElementById("fullPriceResult");
+  const qty = parseInt(document.getElementById("qtyInput").value, 10);
+  if (!qty || qty < 1) {
+    result.className = "err";
+    result.textContent = "Enter a quantity first.";
+    return;
+  }
+  const g = G();
+  const colorList = g.type === "photo" ? g.colors : COLORS;
+  const locations = ["front", "back"].filter(s => items[s].length);
+
+  btn.disabled = true;
+  result.className = "";
+  result.textContent = "Getting your price… this can take up to 30 seconds.";
+  try {
+    const resp = await fetch(QUOTE_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        product: `${g.name} (${g.desc})`,
+        color: colorList[activeColor].name,
+        quantity: qty,
+        locations: locations,
+        name: document.getElementById("qName").value.trim(),
+        email: document.getElementById("qEmail").value.trim()
+      })
+    });
+    const j = await resp.json();
+    if (j.success) {
+      result.className = "ok";
+      result.textContent =
+        `Quote ${j.quoteNumber}: $${j.totalPrice.toFixed(2)} total` +
+        ` ($${j.unitPrice.toFixed(2)} each, ${locations.length ? "printed" : "blank"})`;
+    } else if (j.pending) {
+      result.className = "";
+      result.textContent =
+        `Quote ${j.quoteNumber} was created but pricing is taking longer than usual — ` +
+        `send your design below and we'll follow up with the full price.`;
+    } else {
+      throw new Error(j.detail || "quote failed");
+    }
+  } catch (err) {
+    result.className = "err";
+    result.textContent =
+      "Couldn't get a live price right now — send your design below and we'll quote you directly.";
+  } finally {
+    btn.disabled = false;
   }
 });
 
